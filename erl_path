@@ -1,0 +1,1 @@
+erl -pa apps/*/ebin -pa deps/*/ebin -sname application_server
