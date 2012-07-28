@@ -22,7 +22,7 @@ start_http_server(Supervisor) ->
     Docroot = application_server_utils:path_to_priv(?APP, ["www"]),   
     EbinDir = filename:join([Docroot, "..", "..", "ebin"]),
 
-    GconfList = [{logdir, "/Users/mateuszkorszun/logs"}, {ebin_dir, [EbinDir]}, {id, ?ID}],    
+    GconfList = [{ebin_dir, [EbinDir]}, {id, ?ID}],    
     SconfList = [{docroot, Docroot}, {port, Port}, {listen, Addr}, 
                  {errormod_crash, yaws_error_reporter}, {appmods, Mods}],
           

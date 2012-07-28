@@ -1,5 +1,4 @@
 -module(delete_api).
-
 -export([out/1]).
 
 out(_Args) ->
