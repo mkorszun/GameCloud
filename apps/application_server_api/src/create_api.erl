@@ -1,15 +1,14 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com>
 %%% @copyright (C) 2012, SaveCloud
 %%% @doc
-%%% Save creation API
+%%% Create save API
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(create_api).
 -export([out/1]).
 
--define(DB, couchdb_db).
--define(APP, application_server_api).
+-include("api.hrl").
 
 %% ###############################################################
 %% CALLBACK FUNCTION
@@ -35,26 +34,33 @@ out(A) ->
 %% ############################################################### 
 
 create_save(DB, Params, Files) ->
-    User = proplists:get_value("user_id", Params),
-    case database:read_doc(DB, User) of
-	    {ok, UserDoc} ->
-	        UserPass = document:read("password", UserDoc),
-            Pass = proplists:get_value("password", Params), 
-	        AuthRes = authorization:auth(UserPass, Pass),
+    case authorization:authorize(DB, Params) of
+	    {ok, Result} ->
             Doc = parameter:delete(["password"], Params),
-	        create_save(DB, document:create(Doc), Files, AuthRes);
+	        create_save(DB, document:create(Doc), Files, Result);
 	    {error, not_found} ->
 	        [{status, 404},{content, "text/xml", "User not found"}];
 	    {error, _Error} ->
 	        [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
      
-create_save(DB, Doc, Files, true) ->
-    {ok, Doc1} = database:save_doc(DB, Doc, Files),
-    DocId = document:get_id(Doc1),
-    [{status, 200}, {content, "text/xml", DocId}];
+create_save(DB, Doc, Files, true) -> 
+    case couchbeam_view:fetch(DB, ?VIEW, [?KEYS(Doc)]) of
+        {ok, []} ->
+            {ok, Doc1} = database:save_doc(DB, Doc, Files),
+            [{status, 200}, {content, "text/xml", "ok"}];
+        {ok, [_]} ->
+            [{status, 400}, {content, "text/xml", "Save already exists"}];
+        {error, _Error} ->
+            [{status, 500}, {content, "text/xml", "Internal error"}]
+    end;
+
 create_save(_, _, _, false) ->
     [{status, 401}, {content, "text/xml", "Unauthorized"}].
+
+%% ###############################################################
+%% VALIDATE PARAMS
+%% ############################################################### 
 
 validate() ->
     [
