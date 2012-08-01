@@ -1,11 +1,11 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
 %%% @copyright (C) 2012, SaveCloud 
 %%% @doc
-%%% Delete save API
+%%% Delete save by name API
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
     
--module(delete_api).
+-module(delete_by_name_api).
 -export([out/1]).
 
 -include("api.hrl").
@@ -28,7 +28,8 @@ out(A) ->
 delete_save(DB, Args) ->
     case authorization:authorize(DB, Args) of
         {ok, Result} ->
-            delete_save(DB, ?VIEW, [?KEYS(Args)], Result);
+            {View, Keys} = views:view(delete_by_name, Args),
+            delete_save(DB, View, [Keys], Result);
         {error, not_found} ->
             [{status, 404}, {content, "text/xml", "User not found"}];
         {error, _Error} ->

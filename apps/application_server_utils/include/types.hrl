@@ -1,0 +1,5 @@
+-type element() :: {string() | binary(), term()}.
+-type proplist() :: list(element()).
+-type document() :: {proplist()}.
+-type view() :: {binary(), binary()}.
+-type keys() :: {key, list(binary())}.

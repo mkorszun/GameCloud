@@ -5,7 +5,7 @@
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
--module(create_api).
+-module(create_save_api).
 -export([out/1]).
 
 -include("api.hrl").
@@ -25,6 +25,12 @@ out(A) ->
 	        {ok, DB} = database:open(DBName),
             Create = fun() -> create_save(DB, P, F) end,
 	        request:execute(validate(), P, Create);
+        {error, no_multipart_form_data} ->
+            {ok, DBName} = application:get_env(?APP, ?DB),
+            {ok, DB} = database:open(DBName),
+            Args = yaws_api:parse_post(A),
+            Create = fun() -> create_save(DB, Args, []) end,
+            request:execute(validate(), Args, Create);
         {error, _Reason} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
@@ -45,7 +51,8 @@ create_save(DB, Params, Files) ->
     end.
      
 create_save(DB, Doc, Files, true) -> 
-    case couchbeam_view:fetch(DB, ?VIEW, [?KEYS(Doc)]) of
+    {View, Keys} = views:view(create, Doc),
+    case couchbeam_view:fetch(DB, View, [Keys]) of
         {ok, []} ->
             {ok, Doc1} = database:save_doc(DB, Doc, Files),
             [{status, 200}, {content, "text/xml", "ok"}];

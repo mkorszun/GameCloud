@@ -5,7 +5,7 @@
 %%% @end 
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
--module(read_api).
+-module(read_by_name_api).
 -export([out/1]).
 
 %% ###############################################################
@@ -28,7 +28,8 @@ out(A) ->
 read_save(DB, Args) ->
     case authorization:authorize(DB, Args) of
         {ok, Result} ->
-            read_save(DB, ?VIEW, [?KEYS(Args)], Result);
+            {View, Keys} = views:view(read_by_name, Args),
+            read_save(DB, View, [Keys], Result);
         {error, not_found} ->
             [{status, 404}, {content, "text/xml", "User not found"}];
         {error, _Error} ->
@@ -37,11 +38,8 @@ read_save(DB, Args) ->
 
 read_save(DB, View, Keys, true) ->
     case database:read_doc(DB, View, Keys) of
-        {ok, Doc} ->
-            Response = ejson:encode(Doc),
-            [{status, 200}, {content, "application/json", Response}];
-        {error, empty} ->
-            [{status, 400}, {content, "text/xml", "Save not found"}];
+        {ok, Resp} ->
+            [{status, 200}, {content, "application/json", ejson:encode(Resp)}];
         {error, _Reason} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end;

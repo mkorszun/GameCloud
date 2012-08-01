@@ -1,4 +1,2 @@
 -define(DB, couchdb_db).
 -define(APP, application_server_api).
--define(VIEW, {<<"game_saves">>, <<"by_user_game_save">>}).
--define(KEYS(Args), document:view_keys(["user_id", "game", "name"], Args)).

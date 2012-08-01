@@ -8,6 +8,10 @@
 -module(database).
 -export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3, delete_doc/3]).
 
+%% ###############################################################
+%%
+%% ###############################################################
+
 open(DBName) ->
     Conn = couchbeam:server_connection(),
     couchbeam:open_db(Conn, DBName).
@@ -26,14 +30,16 @@ read_doc(DB, DocId) when is_list(DocId) ->
 read_doc(_, _) -> {error, wrong_id}.
 
 read_doc(DB, View, Keys) ->
-    case couchbeam_view:first(DB, View, Keys) of
-        {ok, Row} ->
-            {ok, document:read(<<"value">>, Row)};
+    Fun = fun(R, A) -> [document:read(<<"value">>, R) | A] end,
+    case couchbeam_view:fold(Fun, [], DB, View, Keys) of
         {error, Reason} ->
-            {error, Reason}
+            {error, Reason};
+        Rows ->
+            {ok, Rows}
     end.
 
 delete_doc(DB, View, Keys) ->
+    io:format("~n~n~p ~p", [View, Keys]),
     case couchbeam_view:first(DB, View, Keys) of
         {ok, Row} ->
             Doc = document:read(<<"value">>, Row),

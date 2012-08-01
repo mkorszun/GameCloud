@@ -5,7 +5,7 @@
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
--module(register_api).
+-module(register_player_api).
 -export([out/1]).
 
 -define(DB, couchdb_db).
