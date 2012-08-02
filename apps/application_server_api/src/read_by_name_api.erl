@@ -1,7 +1,7 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
 %%% @copyright (C) 2012, SaveCloud 
 %%% @doc
-%%% Read save API
+%%% Read save by name API
 %%% @end 
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
@@ -9,10 +9,14 @@
 -export([out/1]).
 
 %% ###############################################################
-%% CALLBACK FUNCTION 
+%% INCLUDES
 %% ############################################################### 
 
 -include("api.hrl").
+
+%% ###############################################################
+%% CALLBACK FUNCTION 
+%% ############################################################### 
 
 out(A) ->
     Args = yaws_api:parse_post(A),

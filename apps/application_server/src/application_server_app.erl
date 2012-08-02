@@ -1,13 +1,18 @@
--module(application_server_app).
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @copyright (C) 2012, SaveCloud
+%%% @doc
+%%% Application
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
+-module(application_server_app).
 -behaviour(application).
 
-%% Application callbacks
 -export([start/2, stop/1]).
 
-%% ===================================================================
-%% Application callbacks
-%% ===================================================================
+%% ###############################################################
+%% APPLICATION CALLBACKS
+%% ############################################################### 
 
 start(_StartType, _StartArgs) ->
     Res = application_server_sup:start_link(),
@@ -16,3 +21,7 @@ start(_StartType, _StartArgs) ->
 
 stop(_State) ->
     ok.
+
+%% ###############################################################
+%% ###############################################################
+%% ############################################################### 

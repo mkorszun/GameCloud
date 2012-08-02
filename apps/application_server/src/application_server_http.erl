@@ -1,17 +1,23 @@
--module(application_server_http).
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @copyright (C) 2012, SaveCloud
+%%% @doc
+%%% Embedded YAWS
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
+-module(application_server_http).
 -export([start_http_server/1]).
 
-%% ===================================================================
-%% Macros
-%% ===================================================================
+%% ###############################################################
+%% MACROS
+%% ############################################################### 
 
 -define(APP, application_server).
 -define(ID, http_server).
 
-%% ===================================================================
-%% HTTP Server start functions
-%% ===================================================================
+%% ###############################################################
+%% SERVER START FUNCTION
+%% ############################################################### 
 
 start_http_server(Supervisor) ->
 
@@ -19,7 +25,7 @@ start_http_server(Supervisor) ->
     {ok, Port} = application:get_env(?APP, server_port),
     {ok, Mods} = application:get_env(?APP, server_mods),
 
-    Docroot = application_server_utils:path_to_priv(?APP, ["www"]),   
+    Docroot = path_to_priv(?APP, ["www"]),   
     EbinDir = filename:join([Docroot, "..", "..", "ebin"]),
 
     GconfList = [{ebin_dir, [EbinDir]}, {id, ?ID}],    
@@ -31,6 +37,13 @@ start_http_server(Supervisor) ->
     [supervisor:start_child(Supervisor, Ch) || Ch <- ChildSpecs],
     yaws_api:setconf(GC, SCList). 
 
-%% ===================================================================
-%% ===================================================================
-%% ===================================================================
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ############################################################### 
+
+path_to_priv(App, Path) ->
+    filename:join([code:priv_dir(App) | Path]).
+
+%% ###############################################################
+%% ###############################################################
+%% ############################################################### 

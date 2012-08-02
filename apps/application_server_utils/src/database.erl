@@ -39,7 +39,6 @@ read_doc(DB, View, Keys) ->
     end.
 
 delete_doc(DB, View, Keys) ->
-    io:format("~n~n~p ~p", [View, Keys]),
     case couchbeam_view:first(DB, View, Keys) of
         {ok, Row} ->
             Doc = document:read(<<"value">>, Row),
@@ -47,6 +46,10 @@ delete_doc(DB, View, Keys) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ############################################################### 
 
 set_attachments(Doc, [{F, C, B} | T]) ->
     Doc1 = couchbeam_attachments:add_inline(Doc, B, F, C),

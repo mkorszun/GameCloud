@@ -8,6 +8,10 @@
 -module(create_save_api).
 -export([out/1]).
 
+%% ###############################################################
+%% INCLUDES
+%% ###############################################################
+
 -include("api.hrl").
 
 %% ###############################################################
@@ -55,7 +59,7 @@ create_save(DB, Doc, Files, true) ->
     case couchbeam_view:fetch(DB, View, [Keys]) of
         {ok, []} ->
             {ok, Doc1} = database:save_doc(DB, Doc, Files),
-            [{status, 200}, {content, "text/xml", "ok"}];
+            [{status, 200}, {content, "text/xml", document:get_id(Doc1)}];
         {ok, [_]} ->
             [{status, 400}, {content, "text/xml", "Save already exists"}];
         {error, _Error} ->

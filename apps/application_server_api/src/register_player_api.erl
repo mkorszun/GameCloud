@@ -1,15 +1,18 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com>
 %%% @copyright (C) 2012, SaveCloud
 %%% @doc
-%%% User registration API
+%%% Register player API
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(register_player_api).
 -export([out/1]).
 
--define(DB, couchdb_db).
--define(APP, application_server_api).
+%% ###############################################################
+%% INCLUDES
+%% ############################################################### 
+
+-include("api.hrl").
 
 %% ###############################################################
 %% CALLBACK FUNCTION
@@ -38,6 +41,10 @@ register_user(DB, Args) ->
 	    {error, _Error} ->
 	        [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
+
+%% ############################################################### 
+%% VALIDATE PARAMS
+%% ############################################################### 
 
 validate() ->
     [
