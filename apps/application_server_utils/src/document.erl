@@ -6,14 +6,14 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([create/1, read/2, get_id/1]).
+-export([create/1, read/2, get_id/1, delete/2, set_value/3]).
 
 %% ###############################################################
 %%
 %% ############################################################### 
 
-create(Doc) -> 
-    {doc(Doc)}.
+create(Doc) when is_list(Doc) -> {doc(Doc)};
+create({L} = Doc) when is_list(L) -> Doc.
 
 read(Key, Doc) when is_list(Key) ->
     read(list_to_binary(Key), Doc);
@@ -22,6 +22,14 @@ read(Key, Doc) when is_binary(Key) ->
 
 get_id(Doc) ->
     couchbeam_doc:get_id(Doc).    
+
+delete(Doc, []) ->
+    Doc;
+delete(Doc, [H|T]) ->
+    delete(couchbeam_doc:delete_value(H, Doc), T).
+
+set_value(Key, Value, Doc) ->
+    couchbeam_doc:set_value(Key, Value, Doc).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS

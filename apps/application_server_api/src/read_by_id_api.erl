@@ -33,22 +33,24 @@ read_save(DB, Args) ->
     case authorization:authorize(DB, Args) of
         {ok, Result} ->
             {View, Keys} = views:view(read_by_id, Args),
-            read_save(DB, View, [Keys], Result);
+            Attach = proplists:get_value("attach", Args, false),
+            read_save(DB, View, [Keys], Attach, Result);
         {error, not_found} ->
             [{status, 404}, {content, "text/xml", "User not found"}];
         {error, _Error} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
 
-read_save(DB, View, Keys, true) ->
+read_save(DB, View, Keys, Attach, true) ->
     case database:read_doc(DB, View, Keys) of
         {ok, Resp} ->
-            [{status, 200}, {content, "application/json", ejson:encode(Resp)}];
+            Response = ejson:encode(attachments:get(DB, Resp, Attach)),
+            [{status, 200}, {content, "application/json", Response}];
         {error, _Reason} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end;
 
-read_save(_, _, _, false) ->
+read_save(_, _, _, _, false) ->
     [{status, 401}, {content, "text/xml", "Unauthorized"}].
 
 %% ###############################################################

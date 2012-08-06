@@ -6,7 +6,8 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(database).
--export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3, delete_doc/3]).
+-export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
+         delete_doc/2, delete_doc/3]).
 
 %% ###############################################################
 %%
@@ -37,6 +38,10 @@ read_doc(DB, View, Keys) ->
         Rows ->
             {ok, Rows}
     end.
+
+delete_doc(DB, Id) ->
+    {ok, Doc} = read_doc(DB, Id),
+    couchbeam:delete_doc(DB, Doc).
 
 delete_doc(DB, View, Keys) ->
     case couchbeam_view:first(DB, View, Keys) of
