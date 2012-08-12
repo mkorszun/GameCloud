@@ -21,10 +21,11 @@
 out(A) ->
     case yaws_api:parse_multipart_post(A) of
 	    {cont, Cont, Res} ->
-	        St = multipart:handle_res(A, Res, [], []),
-	        {get_more, Cont, [St | multipart:state(A)]};
+            State = multipart:handle_res(A, Res, multipart:state(A)),
+	        {get_more, Cont, State};
         {result, Res} ->
-            {P, F} = multipart:handle_res(A, Res, [], []),
+            Params = multipart:handle_res(A, Res, multipart:state(A)),
+            {P, F} = multipart:build_params(A, Params, [], []),
 	        {ok, DBName} = application:get_env(?APP, ?DB),
 	        {ok, DB} = database:open(DBName),
             Create = fun() -> create_save(DB, P, F) end,
