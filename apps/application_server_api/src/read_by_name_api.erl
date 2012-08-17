@@ -30,7 +30,7 @@ out(A) ->
 %% ############################################################### 
 
 read_save(DB, Args) ->
-    case authorization:authorize(DB, Args) of
+    case authorization:authorize1(player, DB, Args) of
         {ok, Result} ->
             {View, Keys} = views:view(read_by_name, Args),
             Attach = proplists:get_value("attach", Args, false),

@@ -15,6 +15,12 @@
 -include("api.hrl").
 
 %% ###############################################################
+%% MACROS
+%% ############################################################### 
+
+-define(TYPE, {"type", "player"}).
+
+%% ###############################################################
 %% CALLBACK FUNCTION
 %% ############################################################### 
 
@@ -30,17 +36,25 @@ out(A) ->
 %% ############################################################### 
 
 register_user(DB, Args) ->
-    User = proplists:get_value("user_id", Args),
-    Pass = proplists:get_value("password", Args), 
-    Doc = document:create([{"_id", User}, {"password", Pass}]),
+    case authorization:authorize1(developer, DB, Args) of 
+        {ok, Result} ->
+            register_user(DB, document:create([?TYPE | Args]), Result);
+        {error, _Error} ->
+            [{status, 500}, {content, "text/xml", "Internal error"}]
+    end.
+
+register_user(DB, Doc, true) ->
     case database:save_doc(DB, Doc) of
 	    {ok, _} ->
 	        [{status, 200}, {content, "text/xml", "ok"}]; 
 	    {error, conflict} ->
-	        [{status, 409}, {content, "text/xml", "User already exists"}];
+	        [{status, 409}, {content, "text/xml", "Developer already exists"}];
 	    {error, _Error} ->
 	        [{status, 500}, {content, "text/xml", "Internal error"}]
-    end.
+    end;
+
+register_user(_, _, false) ->
+    [{status, 400}, {content, "text/xml", "Unauthorized"}].
 
 %% ############################################################### 
 %% VALIDATE PARAMS
@@ -48,10 +62,16 @@ register_user(DB, Args) ->
 
 validate() ->
     [
-        {"user_id", undefined, 404, "text/xml", "Missing user name"},
-        {"user_id", [], 400, "text/xml", "Empty user name"},
-        {"password", undefined, 404, "text/xml", "Missing password"},
-        {"password", [], 400, "text/xml", "Empty password"}
+        {"developer_id", undefined, 404, "text/xml", "Missing developer id"},
+        {"developer_id", [], 400, "text/xml", "Empty developer id"},
+        {"dev_pass", undefined, 404, "text/xml", "Missing devloper password"},
+        {"dev_pass", [], 404, "text/xml", "Empty developer password"},
+        {"game_id", undefined, 404, "text/xml", "Missing game id"},
+        {"game_id", [], 400, "text/xml", "Empty game id"},
+        {"user_id", undefined, 404, "text/xml", "Missing user id"},
+        {"user_id", [], 400, "text/xml", "Empty user id"},
+        {"password", undefined, 404, "text/xml", "Missing user password"},
+        {"password", [], 400, "text/xml", "Empty user password"}
     ].
 
 %% ###############################################################

@@ -6,21 +6,26 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(authorization).
--export([authorize/2, authorize/3]).
+-export([authorize1/3, authorize2/4]).
 
 %% ###############################################################
 %%
 %% ###############################################################
 
-authorize(DB, Params) ->
+authorize1(player, DB, Params) ->
     User = proplists:get_value("user_id", Params),
-    Pass = proplists:get_value("password", Params),
-    authorize(DB, User, Pass).
+    Pass = proplists:get_value("user_pass", Params),
+    authorize2(DB, User, Pass, "user_pass");
 
-authorize(DB, User, Pass) ->
+authorize1(developer, DB, Params) ->
+    User = proplists:get_value("developer_id", Params),
+    Pass = proplists:get_value("dev_pass", Params),
+    authorize2(DB, User, Pass, "dev_pass").
+
+authorize2(DB, User, Pass, PassKey) ->
     case database:read_doc(DB, User) of
         {ok, UserDoc} ->
-            UserPass = document:read("password", UserDoc),
+            UserPass = document:read(PassKey, UserDoc),
             {ok, auth(UserPass, Pass)};
         {error, Reason} ->
             {error, Reason}

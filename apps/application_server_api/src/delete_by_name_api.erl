@@ -30,7 +30,7 @@ out(A) ->
 %% ############################################################### 
 
 delete_save(DB, Args) ->
-    case authorization:authorize(DB, Args) of
+    case authorization:authorize1(player, DB, Args) of
         {ok, Result} ->
             {View, Keys} = views:view(delete_by_name, Args),
             delete_save(DB, View, [Keys], Result);

@@ -30,7 +30,7 @@ out(A) ->
 %% ############################################################### 
 
 delete_user(DB, Args) ->
-    case authorization:authorize(DB, Args) of
+    case authorization:authorize(player, DB, Args) of
         {ok, Result} ->
             delete_user(DB, Args, Result);
         {error, not_found} -> 

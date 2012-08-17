@@ -45,7 +45,7 @@ out(A) ->
 %% ############################################################### 
 
 create_save(DB, Params, Files) ->
-    case authorization:authorize(DB, Params) of
+    case authorization:authorize1(player, DB, Params) of
 	    {ok, Result} ->
             Doc = parameter:delete(["password"], Params),
 	        create_save(DB, document:create(Doc), Files, Result);
