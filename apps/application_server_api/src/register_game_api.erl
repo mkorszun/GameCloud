@@ -1,4 +1,4 @@
-%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
 %%% @copyright (C) 2012, SaveCloud
 %%% @doc
 %%% Register game API
@@ -18,7 +18,7 @@
 %% MACROS
 %% ###############################################################
 
--define(TYPE, {"type", "game"}).
+-define(GAMES, []).
 
 %% ###############################################################
 %% CALLBACK FUNCTION
@@ -36,22 +36,30 @@ out(A) ->
 %% ###############################################################
 
 register_game(DB, Args) ->
-    case authorization:authorize1(developer, DB, Args) of
-        {ok, Result} ->
-            register_game(DB, document:create([?TYPE | Args]), Result);
+    case authorization:authorize1(developer, DB, Args, true) of
+        {ok, Result, DevDoc} ->
+            register_game(DB, DevDoc, Args, Result);
         {error, _Error} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
 
-register_game(DB, Doc, true) ->
-    case database:save_doc(DB, Doc) of
-        {ok, _} ->
-            [{status, 200}, {content, "text/xml", "ok"}];
-        {error, _Error} ->
-            [{status, 500}, {content, "text/xml", "Internal error"}]
+register_game(DB, DevDoc, Args, true) ->
+    RegisteredGames = document:read("games", DevDoc, ?GAMES),
+    NewGame = document:create(parameter:delete(["developer_id", "dev_pass"], Args)),
+    case document:exists(proplists:lookup("game_id", Args), RegisteredGames) of
+        false ->
+            NewDevDoc = document:set_value(<<"games">>, [NewGame | RegisteredGames], DevDoc),
+            case database:save_doc(DB, NewDevDoc) of
+                {ok, _} ->
+                    [{status, 200}, {content, "text/xml", "ok"}];
+                {error, _Error} ->
+                    [{status, 500}, {content, "text/xml", "Internal error"}]
+            end;
+        true ->
+            [{status, 400}, {content, "text/xml", "Game already registered"}]
     end;
 
-register_game(_, _, false) ->
+register_game(_, _, _, false) ->
     [{status, 401}, {content, "text/xml", "Unauthorized"}].
 
 %% ###############################################################
