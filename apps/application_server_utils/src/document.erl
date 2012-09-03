@@ -39,7 +39,7 @@ set_value(Key, Value, Doc) ->
 
 exists(_, []) ->
     false;
-exists(KV, [{H} = Doc | T]) ->
+exists(KV, [{_} = Doc | T]) ->
     case exists(KV, Doc) of
         true -> true;
         false -> exists(KV, T)

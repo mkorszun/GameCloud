@@ -18,7 +18,7 @@
 %% MACROS
 %% ###############################################################
 
--define(GAMES, []).
+-define(TYPE, {"type", "game"}).
 
 %% ###############################################################
 %% CALLBACK FUNCTION
@@ -36,30 +36,25 @@ out(A) ->
 %% ###############################################################
 
 register_game(DB, Args) ->
-    case authorization:authorize1(developer, DB, Args, true) of
-        {ok, Result, DevDoc} ->
-            register_game(DB, DevDoc, Args, Result);
+    case authorization:authorize1(developer, DB, Args) of
+        {ok, Result} ->
+            Params = parameter:delete(["dev_pass"], Args),
+            Doc = document:create([?TYPE | Params]),
+            register_game(DB, Doc, Result);
         {error, _Error} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
 
-register_game(DB, DevDoc, Args, true) ->
-    RegisteredGames = document:read("games", DevDoc, ?GAMES),
-    NewGame = document:create(parameter:delete(["developer_id", "dev_pass"], Args)),
-    case document:exists(proplists:lookup("game_id", Args), RegisteredGames) of
-        false ->
-            NewDevDoc = document:set_value(<<"games">>, [NewGame | RegisteredGames], DevDoc),
-            case database:save_doc(DB, NewDevDoc) of
-                {ok, _} ->
-                    [{status, 200}, {content, "text/xml", "ok"}];
-                {error, _Error} ->
-                    [{status, 500}, {content, "text/xml", "Internal error"}]
-            end;
-        true ->
-            [{status, 400}, {content, "text/xml", "Game already registered"}]
+register_game(DB, Doc, true) ->
+    case database:save_doc(DB, Doc) of
+        {ok, CreatedDoc} ->
+            ID = document:get_id(CreatedDoc),
+            [{status, 200}, {content, "text/xml", ID}];
+        {error, _Error} ->
+            [{status, 500}, {content, "text/xml", "Internal error"}]
     end;
 
-register_game(_, _, _, false) ->
+register_game(_, _, false) ->
     [{status, 401}, {content, "text/xml", "Unauthorized"}].
 
 %% ###############################################################

@@ -38,7 +38,8 @@ out(A) ->
 register_user(DB, Args) ->
     case authorization:authorize1(developer, DB, Args) of 
         {ok, Result} ->
-            register_user(DB, document:create([?TYPE | Args]), Result);
+            Params = parameter:delete(["developer_id", "dev_pass"], Args),
+            register_user(DB, document:create([?TYPE | Params]), Result);
         {error, _Error} ->
             [{status, 500}, {content, "text/xml", "Internal error"}]
     end.
@@ -47,8 +48,6 @@ register_user(DB, Doc, true) ->
     case database:save_doc(DB, Doc) of
 	    {ok, _} ->
 	        [{status, 200}, {content, "text/xml", "ok"}]; 
-	    {error, conflict} ->
-	        [{status, 409}, {content, "text/xml", "Developer already exists"}];
 	    {error, _Error} ->
 	        [{status, 500}, {content, "text/xml", "Internal error"}]
     end;
