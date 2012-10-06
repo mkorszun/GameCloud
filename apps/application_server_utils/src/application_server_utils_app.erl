@@ -1,8 +1,8 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Application
-%%% @end                       
+%%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(application_server_utils_app).

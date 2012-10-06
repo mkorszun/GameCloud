@@ -1,5 +1,5 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com>
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Register player API
 %%% @end
@@ -15,12 +15,6 @@
 -include("api.hrl").
 
 %% ###############################################################
-%% MACROS
-%% ############################################################### 
-
--define(TYPE, {"type", "player"}).
-
-%% ###############################################################
 %% CALLBACK FUNCTION
 %% ############################################################### 
 
@@ -28,32 +22,17 @@ out(A) ->
     Args = yaws_api:parse_post(A),
     {ok, DBName} = application:get_env(?APP, ?DB),
     {ok, DB} = database:open( DBName),
-    Register = fun() -> register_user(DB, Args) end,
-    request:execute(validate(), Args, Register).
-
-%% ###############################################################
-%% INTERNAL FUNCTIONS
-%% ############################################################### 
-
-register_user(DB, Args) ->
-    case authorization:authorize1(developer, DB, Args) of 
-        {ok, Result} ->
-            Params = parameter:delete(["developer_id", "dev_pass"], Args),
-            register_user(DB, document:create([?TYPE | Params]), Result);
+    Register = fun() -> player:register(DB, Args) end,
+    case request:execute(validate(), Args, Register) of
+        {ok, Doc} ->
+            [{status, 200}, {content, "application/json", response:to_json(document:get_id(Doc))}];
+        {error, game_not_found} ->
+            [{status, 400}, {content, "appllication/json", response:to_json("Game not found")}];
+        {error, {missing_param, Code, Message}} ->
+            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "text/xml", "Internal error"}]
+            [{status, 500}, {content, "text/xml", response:to_json("Internal error")}]
     end.
-
-register_user(DB, Doc, true) ->
-    case database:save_doc(DB, Doc) of
-	    {ok, _} ->
-	        [{status, 200}, {content, "text/xml", "ok"}]; 
-	    {error, _Error} ->
-	        [{status, 500}, {content, "text/xml", "Internal error"}]
-    end;
-
-register_user(_, _, false) ->
-    [{status, 400}, {content, "text/xml", "Unauthorized"}].
 
 %% ############################################################### 
 %% VALIDATE PARAMS
@@ -61,16 +40,12 @@ register_user(_, _, false) ->
 
 validate() ->
     [
-        {"developer_id", undefined, 404, "text/xml", "Missing developer id"},
-        {"developer_id", [], 400, "text/xml", "Empty developer id"},
-        {"dev_pass", undefined, 404, "text/xml", "Missing devloper password"},
-        {"dev_pass", [], 404, "text/xml", "Empty developer password"},
-        {"game_id", undefined, 404, "text/xml", "Missing game id"},
-        {"game_id", [], 400, "text/xml", "Empty game id"},
-        {"user_id", undefined, 404, "text/xml", "Missing user id"},
-        {"user_id", [], 400, "text/xml", "Empty user id"},
-        {"password", undefined, 404, "text/xml", "Missing user password"},
-        {"password", [], 400, "text/xml", "Empty user password"}
+        {"game_uuid", undefined, 400, "Missing game uuid"},
+        {"game_uuid", [], 400, "Empty game uuid"},
+        {"player_id", undefined, 400, "Missing player id"},
+        {"player_id", [], 400, "Empty player id"},
+        {"password", undefined, 400, "Missing player password"},
+        {"password", [], 400, "Empty player password"}
     ].
 
 %% ###############################################################

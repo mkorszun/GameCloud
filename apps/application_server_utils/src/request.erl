@@ -1,5 +1,5 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Request execution mechanism
 %%% @end
@@ -13,9 +13,9 @@
 %% ###############################################################
 
 execute([], _Params, Logic) -> Logic();
-execute([{Name, Pattern, Status, Type, Response} | T], Params, Logic) ->
+execute([{Name, Pattern, Code, Response} | T], Params, Logic) ->
     case proplists:get_value(Name, Params) of
-        Pattern -> [{status, Status}, {content, Type, Response}];
+        Pattern -> {error, {missing_param, Code, Response}};
         Value when is_list(Value) -> execute(T, Params, Logic)
     end.
  

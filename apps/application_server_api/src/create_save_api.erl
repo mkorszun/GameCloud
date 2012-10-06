@@ -1,5 +1,5 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com>
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Create save API
 %%% @end
@@ -20,55 +20,45 @@
 
 out(A) ->
     case yaws_api:parse_multipart_post(A) of
-	    {cont, Cont, Res} ->
+        {cont, Cont, Res} ->
             State = multipart:handle_res(A, Res, multipart:state(A)),
-	        {get_more, Cont, State};
+            {get_more, Cont, State};
         {result, Res} ->
             Params = multipart:handle_res(A, Res, multipart:state(A)),
             {P, F} = multipart:build_params(A, Params, [], []),
-	        {ok, DBName} = application:get_env(?APP, ?DB),
-	        {ok, DB} = database:open(DBName),
-            Create = fun() -> create_save(DB, P, F) end,
-	        request:execute(validate(), P, Create);
+            {ok, DBName} = application:get_env(?APP, ?DB),
+            {ok, DB} = database:open(DBName),
+            Create = fun() -> save:register(DB, P, F) end,
+            request(validate(), P, Create);
         {error, no_multipart_form_data} ->
             {ok, DBName} = application:get_env(?APP, ?DB),
             {ok, DB} = database:open(DBName),
             Args = yaws_api:parse_post(A),
-            Create = fun() -> create_save(DB, Args, []) end,
-            request:execute(validate(), Args, Create);
+            Create = fun() -> save:register(DB, Args, []) end,
+            request(validate(), Args, Create);
         {error, _Reason} ->
-            [{status, 500}, {content, "text/xml", "Internal error"}]
+            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
     end.
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ############################################################### 
 
-create_save(DB, Params, Files) ->
-    case authorization:authorize1(player, DB, Params) of
-	    {ok, Result} ->
-            Doc = parameter:delete(["password"], Params),
-	        create_save(DB, document:create(Doc), Files, Result);
-	    {error, not_found} ->
-	        [{status, 404},{content, "text/xml", "User not found"}];
-	    {error, _Error} ->
-	        [{status, 500}, {content, "text/xml", "Internal error"}]
-    end.
-     
-create_save(DB, Doc, Files, true) -> 
-    {View, Keys} = views:view(create, Doc),
-    case couchbeam_view:fetch(DB, View, [Keys]) of
-        {ok, []} ->
-            {ok, Doc1} = database:save_doc(DB, Doc, Files),
-            [{status, 200}, {content, "text/xml", document:get_id(Doc1)}];
-        {ok, [_]} ->
-            [{status, 400}, {content, "text/xml", "Save already exists"}];
+request(ValidationList, Args, CreateFun) ->
+    case request:execute(ValidationList, Args, CreateFun) of
+        {ok, Doc} ->
+            [{status, 200}, {content, "application/json", response:to_json(document:get_id(Doc))}];
+        {error, game_not_found} ->
+            [{status, 400}, {content, "application/json", response:to_json("Game not found")}];
+        {error, player_not_found} ->
+            [{status, 400}, {content, "application/json", response:to_json("Player not found")}];
+        {error, unauthorized} ->
+            [{status, 404}, {content, "application/json", response:to_json("Unauthorized")}];
+        {error, {missing_param, Code, Message}} ->
+            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "text/xml", "Internal error"}]
-    end;
-
-create_save(_, _, _, false) ->
-    [{status, 401}, {content, "text/xml", "Unauthorized"}].
+            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
+    end.
 
 %% ###############################################################
 %% VALIDATE PARAMS
@@ -76,18 +66,16 @@ create_save(_, _, _, false) ->
 
 validate() ->
     [
-        {"user_id", undefined, 404, "text/xml", "Missing user name"},
-        {"user_id", [], 404, "text/xml", "Empty user name"},
-        {"password", undefined, 400, "text/xml", "Missing password"},
-        {"password", [], 400, "text/xml", "Empty password"},
-        {"game", undefined, 400, "text/xml", "Missing game name"},
-        {"game", [], 400, "text/xml", "Empty game name"},
-        {"name", undefined, 400, "text/xml", "Missing save name"},
-        {"name", [], 400, "text/xml", "Empty save name"},
-        {"type", undefined, 400, "text/xml", "Missing type"},
-        {"type", [], 400, "text/xml", "Empty type"}
+        {"player_uuid", undefined, 400, "Missing player uuid"},
+        {"player_uuid", [], 400, "Empty player uuid"},
+        {"password", undefined, 400, "Missing player password"},
+        {"password", [], 400, "Empty player password"},
+        {"game_uuid", undefined, 400, "Missing game uuid"},
+        {"game_uuid", [], 400, "Empty game uuid"},
+        {"save_name", undefined, 400, "Missing save name"},
+        {"save_name", [], 400, "Empty save name"}
     ].
-    
+
 %% ###############################################################
 %% ###############################################################
 %% ############################################################### 

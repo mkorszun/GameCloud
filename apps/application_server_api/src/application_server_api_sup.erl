@@ -1,5 +1,5 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Supervisor
 %%% @end

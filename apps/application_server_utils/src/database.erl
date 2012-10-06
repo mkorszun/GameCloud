@@ -1,5 +1,5 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com>
-%%% @copyright (C) 2012, SaveCloud
+%%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Database helper functions
 %%% @end
@@ -7,7 +7,7 @@
 
 -module(database).
 -export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
-         delete_doc/2, delete_doc/3]).
+         delete_doc/2, delete_doc/3, exists/2]).
 
 %% ###############################################################
 %%
@@ -40,8 +40,12 @@ read_doc(DB, View, Keys) ->
     end.
 
 delete_doc(DB, Id) ->
-    {ok, Doc} = read_doc(DB, Id),
-    couchbeam:delete_doc(DB, Doc).
+    case read_doc(DB, Id) of
+        {ok, Doc} ->
+            couchbeam:delete_doc(DB, Doc);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 delete_doc(DB, View, Keys) ->
     case couchbeam_view:first(DB, View, Keys) of
@@ -50,6 +54,14 @@ delete_doc(DB, View, Keys) ->
             couchbeam:delete_doc(DB, Doc);
         {error, Reason} ->
             {error, Reason}
+    end.
+
+exists(DB, Id) ->
+    case read_doc(DB, Id) of
+        {ok, _Doc} ->
+            {ok, true};
+        {error, Error} ->
+            {error, Error}
     end.
 
 %% ###############################################################
