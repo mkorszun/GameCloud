@@ -12,4 +12,4 @@
 to_json(Res) when is_list(Res) ->
     to_json(list_to_binary(Res));
 to_json(Res) ->
-    couchbeam_ejson:encode([{res, Res}]).
+    couchbeam_ejson:encode({[{res, Res}]}).
