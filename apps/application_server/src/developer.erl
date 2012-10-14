@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(developer).
--export([register/2, authorize/2]).
+-export([register/2, authorize/3]).
 
 %% ###############################################################
 %% MACROS
@@ -28,10 +28,10 @@ register(DB, Args) ->
             {error, Error}
     end.
 
-authorize(DB, Args) ->
-    case database:read_doc(DB, proplists:get_value("developer_id", Args)) of
+authorize(DB, DeveloperId, Password) ->
+    case database:read_doc(DB, DeveloperId) of
         {ok, Doc} ->
-            authorization:authorize(developer, Doc, Args);
+            authorization:authorize(developer, Doc, DeveloperId, Password);
         {error, not_found} ->
             {error, developer_not_found};
         {error, Error} ->
@@ -43,9 +43,11 @@ authorize(DB, Args) ->
 %% ###############################################################
 
 build_doc(Args) ->
-    Id = proplists:get_value("developer_id", Args),
-    Params = proplists:delete("developer_id", Args),
-    document:create([{"_id", Id}, ?TYPE | Params]).
+    DeveloperId = proplists:get_value("developer_id", Args),
+    Password = proplists:get_value("password", Args),
+    Email = proplists:get_value("email", Args),
+    PasswordHash = cryptography:sha(Password, DeveloperId),
+    document:create([{"_id", DeveloperId}, {"password", PasswordHash}, {"email", Email}, ?TYPE]).
 
 %% ###############################################################
 %%

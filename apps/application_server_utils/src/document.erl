@@ -34,6 +34,8 @@ delete(Doc, []) ->
 delete(Doc, [H|T]) ->
     delete(couchbeam_doc:delete_value(H, Doc), T).
 
+set_value(Key, Value, Doc) when is_list(Value) ->
+    set_value(Key, list_to_binary(Value), Doc);
 set_value(Key, Value, Doc) ->
     couchbeam_doc:set_value(Key, Value, Doc).
 

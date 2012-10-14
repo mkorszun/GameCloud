@@ -26,6 +26,10 @@ out(A) ->
     case request:execute(validate(), Args, Register) of
         {ok, Doc} ->
             [{status, 200}, {content, "application/json", response:to_json(document:get_id(Doc))}];
+        {error, unauthorized} ->
+            [{status, 404}, {content, "application/json", response:to_json("Unauthorized")}];
+        {error, developer_not_found} ->
+            [{status, 400}, {content, "application/json", response:to_json("Developer not found")}];
         {error, game_not_found} ->
             [{status, 400}, {content, "appllication/json", response:to_json("Game not found")}];
         {error, {missing_param, Code, Message}} ->
@@ -40,6 +44,10 @@ out(A) ->
 
 validate() ->
     [
+        {"developer_id", undefined, 400, "Missing developer id"},
+        {"developer_id", [], 400, "Empty developer id"},
+        {"dev_password", undefined, 400, "Missing developer password"},
+        {"dev_password", [], 400, "Empty developer password"},
         {"game_uuid", undefined, 400, "Missing game uuid"},
         {"game_uuid", [], 400, "Empty game uuid"},
         {"player_id", undefined, 400, "Missing player id"},

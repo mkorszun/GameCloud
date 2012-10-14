@@ -7,7 +7,7 @@
 
 -module(database).
 -export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
-         delete_doc/2, delete_doc/3, exists/2]).
+         delete_doc/2, delete_doc/3, exists/2, exists/3]).
 
 %% ###############################################################
 %%
@@ -60,6 +60,16 @@ exists(DB, Id) ->
     case read_doc(DB, Id) of
         {ok, _Doc} ->
             {ok, true};
+        {error, Error} ->
+            {error, Error}
+    end.
+
+exists(DB, View, Keys) ->
+    case read_doc(DB, View, Keys) of
+        {ok, [_Doc]} ->
+            {ok, true};
+        {ok, []} ->
+            {error, not_found};
         {error, Error} ->
             {error, Error}
     end.

@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(authorization).
--export([authorize/3]).
+-export([authorize/3, authorize/4]).
 
 %% ###############################################################
 %%
@@ -15,12 +15,22 @@
 authorize(player, Doc, Args) ->
     Password1 = document:read(<<"password">>, Doc),
     Password2 = proplists:get_value("password", Args),
-    auth(Password1, Password2);
+    PlayerId = proplists:get_value("player_uuid", Args),
+    auth(Password1, cryptography:sha(Password2, PlayerId));
 
 authorize(developer, Doc, Args) ->
     Password1 = document:read(<<"password">>, Doc),
     Password2 = proplists:get_value("password", Args),
-    auth(Password1, Password2).
+    DeveloperId = proplists:get_value("developer_id", Args),
+    auth(Password1, cryptography:sha(Password2, DeveloperId)).
+
+authorize(player, Doc, PlayerUUID, Password) ->
+    Password1 = document:read(<<"password">>, Doc),
+    auth(Password1, cryptography:sha(Password, PlayerUUID));
+
+authorize(developer, Doc, DevId, DevPass) ->
+    Password1 = document:read(<<"password">>, Doc),
+    auth(Password1, cryptography:sha(DevPass, DevId)).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS

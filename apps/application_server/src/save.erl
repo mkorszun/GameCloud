@@ -18,36 +18,45 @@
 %% API
 %% ############################################################### 
 
-register(DB, Params, Files) ->
-    case player:authorize(DB, Params) of
-        {ok, true} ->
-            database:save_doc(DB, build_doc(Params), Files);
-        {error, Error} ->
-            {error, Error}
-    end.
+register(DB, Args, Files) ->
+    Fun = fun() -> do_register(DB, Args, Files) end,
+    do_authorize_and_execute(DB, Args, Fun).
 
 read(DB, Args) ->
-    case player:authorize(DB, Args) of
-        {ok, true} ->
-            do_read(DB, Args);
-        {error, Error} ->
-            {error, Error}
-    end.
+    Fun = fun() -> do_read(DB, proplists:get_value("save_uuid", Args)) end,
+    do_authorize_and_execute(DB, Args, Fun).
 
 delete(DB, Args) ->
-    case player:authorize(DB, Args) of
-        {ok, true} ->
-            do_delete(DB, Args);
-        {error, Error} ->
-            {error, Error}
-    end.
+    Fun = fun() -> do_delete(DB, proplists:get_value("save_uuid", Args)) end,
+    do_authorize_and_execute(DB, Args, Fun).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ############################################################### 
 
-do_read(DB, Args) ->
-    case database:read_doc(DB, proplists:get_value("save_uuid", Args)) of
+do_authorize_and_execute(DB, Args, Fun) ->
+    PlayerUUID = proplists:get_value("player_uuid", Args),
+    Password = proplists:get_value("password", Args),
+    case player:authorize(DB, PlayerUUID, Password) of
+        {ok, true} ->
+            Fun();
+        {error, Error} ->
+            {error, Error}
+    end.
+
+do_register(DB, Args, Files) ->
+    PlayerUUID = proplists:get_value("player_uuid", Args),
+    Password = proplists:get_value("password", Args),
+    GameUUID = proplists:get_value("game_uuid", Args),
+    case player:exists(DB, PlayerUUID, Password, GameUUID) of
+        {ok, true} ->
+            database:save_doc(DB, build_doc(Args), Files);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+do_read(DB, SaveUUID) ->
+    case database:read_doc(DB, SaveUUID) of
         {ok, Doc} ->
             {ok, attachments:get(DB, Doc, true)};
         {error, not_found} ->
@@ -56,8 +65,8 @@ do_read(DB, Args) ->
             {error, Error}
     end.
 
-do_delete(DB,Args) ->
-    case database:delete_doc(DB, proplists:get_value("save_uuid", Args)) of
+do_delete(DB, SaveUUID) ->
+    case database:delete_doc(DB, SaveUUID) of
         {ok, Doc} ->
             {ok, Doc};
         {error, not_found} ->
@@ -67,8 +76,10 @@ do_delete(DB,Args) ->
     end.
 
 build_doc(Args) ->
-    Doc = parameter:delete(["password"], Args),
-    document:create([?TYPE | Doc]).
+    PlayerUUID = proplists:lookup("player_uuid", Args),
+    GameUUID = proplists:lookup("game_uuid", Args),
+    SaveName = proplists:lookup("save_name", Args),
+    document:create([PlayerUUID, GameUUID, SaveName, ?TYPE]).
 
 %% ###############################################################
 %% 
