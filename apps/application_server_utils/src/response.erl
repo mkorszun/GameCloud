@@ -7,9 +7,15 @@
 
 -module(response).
 
--export([to_json/1]).
+-export([ok/1, error/1, to_json/2]).
 
-to_json(Res) when is_list(Res) ->
-    to_json(list_to_binary(Res));
-to_json(Res) ->
-    couchbeam_ejson:encode({[{res, Res}]}).
+ok(Res) ->
+	to_json(ok, Res).
+
+error(Res) ->
+	to_json(error, Res).
+
+to_json(Key, Res) when is_list(Res) ->
+    to_json(Key, list_to_binary(Res));
+to_json(Key, Res) ->
+    couchbeam_ejson:encode({[{Key, Res}]}).

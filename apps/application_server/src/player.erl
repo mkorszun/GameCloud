@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(player).
--export([register/2, delete/2, authorize/3, exists/4]).
+-export([register/2, delete/2, authorize/3, authorize/4, exists/4]).
 
 %% ###############################################################
 %% MACORS
@@ -44,6 +44,18 @@ authorize(DB, PlayerUUID, Password) ->
         {ok, Doc} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
         {error, not_found} ->
+            {error, player_not_found};
+        {error, Error} ->
+            {error, Error}
+    end.
+
+authorize(DB, PlayerUUID, Password, GameUUID) ->
+    View = {<<"players">>, <<"by_game">>},
+    Keys = {key, views:keys([PlayerUUID, GameUUID])},
+    case database:read_doc(DB, View, [Keys]) of
+        {ok, [Doc]} ->
+            authorization:authorize(player, Doc, PlayerUUID, Password);
+        {error, []} ->
             {error, player_not_found};
         {error, Error} ->
             {error, Error}

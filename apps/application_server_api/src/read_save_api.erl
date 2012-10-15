@@ -25,17 +25,17 @@ out(A) ->
     Read = fun() -> save:read(DB, Args) end,
     case request:execute(validate(), Args, Read) of
         {ok, Save} ->
-            [{status, 200}, {content, "application/json", response:to_json(Save)}];
+            [{status, 200}, {content, "application/json", response:ok(Save)}];
         {error, player_not_found} ->
-            [{status, 400}, {content, "application/json", response:to_json("Player not found")}];
+            [{status, 404}, {content, "application/json", response:error("Player not found")}];
         {error, save_not_found} ->
-            [{status, 400}, {content, "application/json", response:to_json("Save not found")}];
+            [{status, 404}, {content, "application/json", response:error("Save not found")}];
         {error, unauthorized} ->
-            [{status, 404}, {content, "application/json", response:to_json("Unauthorized")}];
+            [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
         {error, {missing_param, Code, Message}} ->
-            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
+            [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
+            [{status, 500}, {content, "application/json", response:error("Internal error")}]
     end.
 
 %% ###############################################################

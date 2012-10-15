@@ -25,17 +25,17 @@ out(A) ->
     Register = fun() -> player:register(DB, Args) end,
     case request:execute(validate(), Args, Register) of
         {ok, Doc} ->
-            [{status, 200}, {content, "application/json", response:to_json(document:get_id(Doc))}];
-        {error, unauthorized} ->
-            [{status, 404}, {content, "application/json", response:to_json("Unauthorized")}];
+            [{status, 200}, {content, "application/json", response:ok(document:get_id(Doc))}];
         {error, developer_not_found} ->
-            [{status, 400}, {content, "application/json", response:to_json("Developer not found")}];
+            [{status, 404}, {content, "application/json", response:error("Developer not found")}];
         {error, game_not_found} ->
-            [{status, 400}, {content, "appllication/json", response:to_json("Game not found")}];
+            [{status, 404}, {content, "appllication/json", response:error("Game not found")}];
+        {error, unauthorized} ->
+            [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
         {error, {missing_param, Code, Message}} ->
-            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
+            [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "text/xml", response:to_json("Internal error")}]
+            [{status, 500}, {content, "text/xml", response:error("Internal error")}]
     end.
 
 %% ############################################################### 

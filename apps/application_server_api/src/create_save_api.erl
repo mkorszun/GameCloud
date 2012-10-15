@@ -37,7 +37,7 @@ out(A) ->
             Create = fun() -> save:register(DB, Args, []) end,
             request(validate(), Args, Create);
         {error, _Reason} ->
-            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
+            [{status, 500}, {content, "application/json", response:error("Internal error")}]
     end.
 
 %% ###############################################################
@@ -47,17 +47,17 @@ out(A) ->
 request(ValidationList, Args, CreateFun) ->
     case request:execute(ValidationList, Args, CreateFun) of
         {ok, Doc} ->
-            [{status, 200}, {content, "application/json", response:to_json(document:get_id(Doc))}];
+            [{status, 200}, {content, "application/json", response:ok(document:get_id(Doc))}];
         {error, game_not_found} ->
-            [{status, 400}, {content, "application/json", response:to_json("Game not found")}];
+            [{status, 404}, {content, "application/json", response:error("Game not found")}];
         {error, player_not_found} ->
-            [{status, 400}, {content, "application/json", response:to_json("Player not found")}];
+            [{status, 404}, {content, "application/json", response:error("Player not found")}];
         {error, unauthorized} ->
-            [{status, 404}, {content, "application/json", response:to_json("Unauthorized")}];
+            [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
         {error, {missing_param, Code, Message}} ->
-            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
+            [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
+            [{status, 500}, {content, "application/json", response:error("Internal error")}]
     end.
 
 %% ###############################################################

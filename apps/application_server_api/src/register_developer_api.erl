@@ -25,13 +25,13 @@ out(A) ->
     Register = fun() -> developer:register(DB, Args) end,
     case request:execute(validate(), Args, Register) of
         {ok, _} ->
-            [{status, 200}, {content, "application/json", response:to_json("ok")}];
+            [{status, 200}, {content, "application/json", response:ok("ok")}];
         {error, developer_already_exists} ->
-            [{status, 400}, {content, "appllication/json", response:to_json("Developer already exists")}];
+            [{status, 403}, {content, "appllication/json", response:error("Developer already exists")}];
         {error, {missing_param, Code, Message}} ->
-            [{status, Code}, {content, "appllication/json", response:to_json(Message)}];
+            [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "application/json", response:to_json("Internal error")}]
+            [{status, 500}, {content, "application/json", response:error("Internal error")}]
     end.
 
 %% ###############################################################
