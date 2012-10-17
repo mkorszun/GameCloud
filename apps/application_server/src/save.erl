@@ -6,7 +6,9 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(save).
--export([register/3, read/2, delete/2]).
+
+-export([create/2, read/1, delete/1]).
+-export([create/3, read/2, delete/2]).
 
 %% ###############################################################
 %% MACROS
@@ -18,16 +20,22 @@
 %% API
 %% ############################################################### 
 
-register(DB, Args, Files) ->
+create(Args, Files) ->
+    create(application_server_db:connection(), Args, Files).
+
+create(DB, Args, Files) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
     Password = proplists:get_value("password", Args),
     GameUUID = proplists:get_value("game_uuid", Args),
-    case player:authorize(DB, PlayerUUID, Password, GameUUID) of
+    case player:authorize_game(DB, PlayerUUID, Password, GameUUID) of
         {ok, true} ->
              do_register(DB, build_doc(Args), Files);
         {error, Error} ->
             {error, Error}
     end.
+
+read(Args) ->
+    read(application_server_db:connection(), Args).
 
 read(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
@@ -38,6 +46,9 @@ read(DB, Args) ->
         {error, Error} ->
             {error, Error}
     end.
+
+delete(Args) ->
+    delete(application_server_db:connection(), Args).
 
 delete(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),

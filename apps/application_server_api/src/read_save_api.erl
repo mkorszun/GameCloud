@@ -9,20 +9,12 @@
 -export([out/1]).
 
 %% ###############################################################
-%% INCLUDES 
-%% ############################################################### 
-
--include("api.hrl").
-
-%% ###############################################################
 %% CALLBACK FUNCTION 
 %% ############################################################### 
 
 out(A) ->
     Args = yaws_api:parse_post(A),
-    {ok, DBName} = application:get_env(?APP, ?DB),
-    {ok, DB} = database:open(DBName),
-    Read = fun() -> save:read(DB, Args) end,
+    Read = fun() -> save:read(Args) end,
     case request:execute(validate(), Args, Read) of
         {ok, Save} ->
             [{status, 200}, {content, "application/json", response:ok(Save)}];

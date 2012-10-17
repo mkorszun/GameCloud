@@ -9,20 +9,12 @@
 -export([out/1]).
 
 %% ###############################################################
-%% INCLUDES
-%% ############################################################### 
-
--include("api.hrl").
-
-%% ###############################################################
 %% CALLBACK FUNCTION 
 %% ############################################################### 
 
 out(A) ->
     Args = yaws_api:parse_post(A),
-    {ok, DBName} = application:get_env(?APP, ?DB),
-    {ok, DB} = database:open(DBName),
-    Delete = fun() -> save:delete(DB, Args) end,
+    Delete = fun() -> save:delete(Args) end,
     case request:execute(validate(), Args, Delete) of
         {ok, _} ->
             [{status, 200}, {content, "application/json", response:ok("ok")}];

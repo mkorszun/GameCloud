@@ -9,20 +9,12 @@
 -export([out/1]).
 
 %% ###############################################################
-%% INCLUDES
-%% ###############################################################
-
--include("api.hrl").
-
-%% ###############################################################
 %% CALLBACK FUNCTION
 %% ###############################################################
 
 out(A) ->
     Args = yaws_api:parse_post(A),
-    {ok, DBName} = application:get_env(?APP, ?DB),
-    {ok, DB} = database:open(DBName),
-    Register = fun() -> game:register(DB, Args) end,
+    Register = fun() -> game:create(Args) end,
     case request:execute(validate(), Args, Register) of
         {ok, Doc} ->
             [{status, 200}, {content, "application/json", response:ok(document:get_id(Doc))}];

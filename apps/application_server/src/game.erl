@@ -6,7 +6,11 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(game).
--export([register/2, exists/4]).
+
+-compile([{parse_transform, lager_transform}]).
+
+-export([create/1, exists/3]).
+-export([create/2, exists/4]).
 
 %% ###############################################################
 %% MACROS
@@ -18,7 +22,10 @@
 %% API
 %% ###############################################################
 
-register(DB, Args) ->
+create(Args) ->
+    create(application_server_db:connection(), Args).
+
+create(DB, Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),
     Password = proplists:get_value("password", Args),
     case developer:authorize(DB, DeveloperId, Password) of
@@ -27,6 +34,9 @@ register(DB, Args) ->
         {error, Error} ->
             {error, Error}
     end.
+
+exists(DeveloperId, Password, GameUUID) ->
+    exists(application_server_db:connection(), DeveloperId, Password, GameUUID).
 
 exists(DB, DeveloperId, Password, GameUUID) ->
     case developer:authorize(DB, DeveloperId, Password) of

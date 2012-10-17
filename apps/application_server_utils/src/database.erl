@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(database).
--export([open/1, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
+-export([open/1, open/3, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
          delete_doc/2, delete_doc/3, exists/2, exists/3]).
 
 %% ###############################################################
@@ -15,6 +15,10 @@
 
 open(DBName) ->
     Conn = couchbeam:server_connection(),
+    couchbeam:open_db(Conn, DBName).
+
+open(DBName, Host, Port) ->
+    Conn = couchbeam:server_connection(Host, Port),
     couchbeam:open_db(Conn, DBName).
 
 save_doc(DB, Doc) ->

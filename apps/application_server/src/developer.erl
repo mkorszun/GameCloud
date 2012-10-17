@@ -6,7 +6,12 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(developer).
--export([register/2, authorize/3]).
+
+-compile([{parse_transform, lager_transform}]).
+
+-export([create/1, authorize/2]).
+-export([create/2, authorize/3]).
+
 
 %% ###############################################################
 %% MACROS
@@ -18,29 +23,55 @@
 %% API
 %% ###############################################################
 
-register(DB, Args) ->
+create(Args) ->
+    create(application_server_db:connection(), Args).
+
+create(DB, Args) ->
     case database:save_doc(DB, build_doc(Args)) of
         {ok, CreatedDoc} ->
+            Id = proplists:get_value("developer_id", Args),
+            lager:info("Developer ~p created", [Id]),
             {ok, CreatedDoc};
         {error, conflict} ->
+            Id = proplists:get_value("developer_id", Args),
+            lager:error("Developer ~p already exists", [Id]),
             {error, developer_already_exists};
         {error, Error} ->
+            lager:error("Failed to create developer: ~s", [Error]),
             {error, Error}
     end.
+
+authorize(DeveloperId, Password) ->
+    authorize(application_server_db:connection(), DeveloperId, Password).
 
 authorize(DB, DeveloperId, Password) ->
     case database:read_doc(DB, DeveloperId) of
         {ok, Doc} ->
-            authorization:authorize(developer, Doc, DeveloperId, Password);
+            do_authorize(Doc, DeveloperId, Password);
         {error, not_found} ->
+            lager:error("Developer ~p not found", [DeveloperId]),
             {error, developer_not_found};
         {error, Error} ->
+            lager:error("Failed to authorize developer: ~s", [Error]),
             {error, Error}
     end.
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
+
+do_authorize(Doc, DeveloperId, Password) ->
+    case authorization:authorize(developer, Doc, DeveloperId, Password) of
+        {ok, true} ->
+            lager:info("Developer ~p authorized", [DeveloperId]),
+            {ok, true};
+        {error, unauthorized} ->
+            lager:error("Developer ~p unauthorized", [DeveloperId]),
+            {error, unauthorized};
+        {error, Error} ->
+            lager:error("Failed to authorize developer: ~s", [DeveloperId]),
+            {error, Error}
+    end.
 
 build_doc(Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),

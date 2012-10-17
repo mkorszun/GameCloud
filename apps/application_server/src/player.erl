@@ -6,7 +6,9 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(player).
--export([register/2, delete/2, authorize/3, authorize/4, exists/4]).
+
+-export([create/1, delete/1, authorize/2, authorize_game/3, exists/3]).
+-export([create/2, delete/2, authorize/3, authorize_game/4, exists/4]).
 
 %% ###############################################################
 %% MACORS
@@ -18,7 +20,10 @@
 %% API
 %% ############################################################### 
 
-register(DB, Args) ->
+create(Args) ->
+    create(application_server_db:connection(), Args).
+
+create(DB, Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),
     DevPassword = proplists:get_value("dev_password", Args),
     GameUUID = proplists:get_value("game_uuid", Args),
@@ -28,6 +33,9 @@ register(DB, Args) ->
         {error, Error} ->
             {error, Error}
     end.
+
+delete(Args) ->
+    delete(application_server_db:connection(), Args).
 
 delete(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
@@ -39,6 +47,9 @@ delete(DB, Args) ->
             {error, Error}
     end.
 
+authorize(PlayerUUID, Password) ->
+    authorize(application_server_db:connection(), PlayerUUID, Password).
+
 authorize(DB, PlayerUUID, Password) ->
     case database:read_doc(DB, PlayerUUID) of
         {ok, Doc} ->
@@ -49,7 +60,10 @@ authorize(DB, PlayerUUID, Password) ->
             {error, Error}
     end.
 
-authorize(DB, PlayerUUID, Password, GameUUID) ->
+authorize_game(PlayerUUID, Password, GameUUID) ->
+    authorize_game(application_server_db:connection(), PlayerUUID, Password, GameUUID).
+
+authorize_game(DB, PlayerUUID, Password, GameUUID) ->
     View = {<<"players">>, <<"by_game">>},
     Keys = {key, views:keys([PlayerUUID, GameUUID])},
     case database:read_doc(DB, View, [Keys]) of
@@ -60,6 +74,9 @@ authorize(DB, PlayerUUID, Password, GameUUID) ->
         {error, Error} ->
             {error, Error}
     end.
+
+exists(PlayerUUID, Password, GameUUID) ->
+    exists(application_server_db:connection(), PlayerUUID, Password, GameUUID).
 
 exists(DB, PlayerUUID, Password, GameUUID) ->
     case authorize(DB, PlayerUUID, Password) of

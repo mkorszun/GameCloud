@@ -1,2 +1,0 @@
--define(DB, couchdb_db).
--define(APP, application_server_api).

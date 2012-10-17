@@ -9,12 +9,6 @@
 -export([out/1]).
 
 %% ###############################################################
-%% INCLUDES
-%% ###############################################################
-
--include("api.hrl").
-
-%% ###############################################################
 %% CALLBACK FUNCTION
 %% ############################################################### 
 
@@ -26,15 +20,11 @@ out(A) ->
         {result, Res} ->
             Params = multipart:handle_res(A, Res, multipart:state(A)),
             {P, F} = multipart:build_params(A, Params, [], []),
-            {ok, DBName} = application:get_env(?APP, ?DB),
-            {ok, DB} = database:open(DBName),
-            Create = fun() -> save:register(DB, P, F) end,
+            Create = fun() -> save:create(P, F) end,
             request(validate(), P, Create);
         {error, no_multipart_form_data} ->
-            {ok, DBName} = application:get_env(?APP, ?DB),
-            {ok, DB} = database:open(DBName),
             Args = yaws_api:parse_post(A),
-            Create = fun() -> save:register(DB, Args, []) end,
+            Create = fun() -> save:create(Args, []) end,
             request(validate(), Args, Create);
         {error, _Reason} ->
             [{status, 500}, {content, "application/json", response:error("Internal error")}]
