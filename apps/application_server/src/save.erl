@@ -7,8 +7,16 @@
 
 -module(save).
 
+-compile([{parse_transform, lager_transform}]).
+
 -export([create/2, read/1, delete/1]).
 -export([create/3, read/2, delete/2]).
+
+%% ###############################################################
+%% INCLUDE
+%% ###############################################################
+
+-include("logger.hrl").
 
 %% ###############################################################
 %% MACROS
@@ -31,6 +39,8 @@ create(DB, Args, Files) ->
         {ok, true} ->
              do_register(DB, build_doc(Args), Files);
         {error, Error} ->
+            ?ERR("Failed to create save for game=~p and player=~p: ", 
+                [GameUUID, PlayerUUID, Error]),
             {error, Error}
     end.
 
@@ -40,10 +50,13 @@ read(Args) ->
 read(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
     Password = proplists:get_value("password", Args),
+    SaveUUID = proplists:get_value("save_uuid", Args),
     case player:authorize(DB, PlayerUUID, Password) of
         {ok, true} ->
-            do_read(DB, proplists:get_value("save_uuid", Args));
+            do_read(DB, SaveUUID);
         {error, Error} ->
+            ?ERR("Failed to read save=~p for player=~p: ~p", 
+                [SaveUUID, PlayerUUID, Error]),
             {error, Error}
     end.
 
@@ -53,10 +66,13 @@ delete(Args) ->
 delete(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
     Password = proplists:get_value("password", Args),
+    SaveUUID = proplists:get_value("save_uuid", Args),
     case player:authorize(DB, PlayerUUID, Password) of
         {ok, true} ->
-            do_delete(DB, proplists:get_value("save_uuid", Args));
+            do_delete(DB, SaveUUID);
         {error, Error} ->
+            ?ERR("Failed to delete save=~p for player=~p: ~p", 
+                [SaveUUID, PlayerUUID, Error]),
             {error, Error}
     end.
 

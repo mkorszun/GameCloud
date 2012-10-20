@@ -13,6 +13,12 @@
 -export([create/2, exists/4]).
 
 %% ###############################################################
+%% INCLUDE
+%% ###############################################################
+
+-include("logger.hrl").
+
+%% ###############################################################
 %% MACROS
 %% ###############################################################
 
@@ -28,10 +34,13 @@ create(Args) ->
 create(DB, Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),
     Password = proplists:get_value("password", Args),
+    GameName = proplists:get_value("game_id", Args),
     case developer:authorize(DB, DeveloperId, Password) of
         {ok, true} ->
             database:save_doc(DB, build_doc(Args));
         {error, Error} ->
+            ?ERR("Failed to create game name=~p for developer=~p: ~p", 
+                [GameName, DeveloperId, Error]),
             {error, Error}
     end.
 
@@ -43,6 +52,8 @@ exists(DB, DeveloperId, Password, GameUUID) ->
         {ok, true} ->
             do_exists(DB, DeveloperId, GameUUID);
         {error, Error} ->
+            ?ERR("Failed to find game id=~p for developer=~p: ~p",
+                [GameUUID, DeveloperId, Error]),
             {error, Error}
     end.
 
@@ -57,8 +68,12 @@ do_exists(DB, DeveloperId, GameUUID) ->
         {ok, true} ->
             {ok, true};
         {error, not_found} ->
+            ?ERR("Failed to find game id=~p for developer=~p",
+                [GameUUID, DeveloperId]),
             {error, game_not_found};
         {error, Error} ->
+            ?ERR("Failed to find game id=~p for developer=~p: ~p",
+                [GameUUID, DeveloperId, Error]),
             {error, Error}
     end.
 

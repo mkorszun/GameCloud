@@ -1,0 +1,1 @@
+-define(ERR(Format, Params), lager:error(Format, Params)).

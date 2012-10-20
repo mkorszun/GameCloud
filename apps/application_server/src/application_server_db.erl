@@ -2,12 +2,12 @@
 
 -export([connection/0]).
 
--include("db.hrl").
+-define(APP, application_server).
 
 connection() ->
-    {ok, DBName} = application:get_env(?APP, ?DB),
-    {ok, Address} = application:get_env(?APP, ?DB_ADDR),
-    {ok, DBPort} = application:get_env(?APP, ?DB_PORT),
+    {ok, DBName} = application:get_env(?APP, couchdb_db),
+    {ok, Address} = application:get_env(?APP, couchdb_addr),
+    {ok, DBPort} = application:get_env(?APP, couchdb_port),
     {ok, DB} = database:open(DBName, addr(Address), DBPort),
     DB.
 

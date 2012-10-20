@@ -7,8 +7,16 @@
 
 -module(player).
 
+-compile([{parse_transform, lager_transform}]).
+
 -export([create/1, delete/1, authorize/2, authorize_game/3, exists/3]).
 -export([create/2, delete/2, authorize/3, authorize_game/4, exists/4]).
+
+%% ###############################################################
+%% INCLUDE
+%% ###############################################################
+
+-include("logger.hrl").
 
 %% ###############################################################
 %% MACORS
@@ -31,6 +39,7 @@ create(DB, Args) ->
         {ok, true} ->
             do_register(DB, Args);
         {error, Error} ->
+            ?ERR("Failed to create player for game id=~p :~p", [GameUUID, Error]),
             {error, Error}
     end.
 
@@ -44,6 +53,7 @@ delete(DB, Args) ->
         {ok, true} ->
             do_delete(DB, Args);
         {error, Error} ->
+            ?ERR("Failed to delete player ~p: ~p", [PlayerUUID, Error]),
             {error, Error}
     end.
 
@@ -55,8 +65,10 @@ authorize(DB, PlayerUUID, Password) ->
         {ok, Doc} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
         {error, not_found} ->
+            ?ERR("Failed to find player id=~p", [PlayerUUID]),
             {error, player_not_found};
         {error, Error} ->
+            ?ERR("Failed to find player id=~p: ~p", [PlayerUUID, Error]),
             {error, Error}
     end.
 
@@ -70,8 +82,12 @@ authorize_game(DB, PlayerUUID, Password, GameUUID) ->
         {ok, [Doc]} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
         {error, []} ->
+            ?ERR("Failed to find player id=~p for game id=~p", 
+                [PlayerUUID, GameUUID]),
             {error, player_not_found};
         {error, Error} ->
+            ?ERR("Failed to find player id=~p for game id=~p: ~p", 
+                [PlayerUUID, GameUUID, Error]),
             {error, Error}
     end.
 
