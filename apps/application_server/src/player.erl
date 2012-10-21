@@ -81,7 +81,7 @@ authorize_game(DB, PlayerUUID, Password, GameUUID) ->
     case database:read_doc(DB, View, [Keys]) of
         {ok, [Doc]} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
-        {error, []} ->
+        {ok, []} ->
             ?ERR("Failed to find player id=~p for game id=~p", 
                 [PlayerUUID, GameUUID]),
             {error, player_not_found};

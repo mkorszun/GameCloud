@@ -9,8 +9,8 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([create/2, read/1, delete/1]).
--export([create/3, read/2, delete/2]).
+-export([create/2, read/1, list/1, delete/1]).
+-export([create/3, read/2, list/2, delete/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -37,7 +37,7 @@ create(DB, Args, Files) ->
     GameUUID = proplists:get_value("game_uuid", Args),
     case player:authorize_game(DB, PlayerUUID, Password, GameUUID) of
         {ok, true} ->
-             do_register(DB, build_doc(Args), Files);
+             do_create(DB, build_doc(Args), Files);
         {error, Error} ->
             ?ERR("Failed to create save for game=~p and player=~p: ", 
                 [GameUUID, PlayerUUID, Error]),
@@ -57,6 +57,22 @@ read(DB, Args) ->
         {error, Error} ->
             ?ERR("Failed to read save=~p for player=~p: ~p", 
                 [SaveUUID, PlayerUUID, Error]),
+            {error, Error}
+    end.
+
+list(Args) ->
+    list(application_server_db:connection(), Args).
+
+list(DB, Args) ->
+    PlayerUUID = proplists:get_value("player_uuid", Args),
+    Password = proplists:get_value("password", Args),
+    GameUUID = proplists:get_value("game_uuid", Args),
+    case player:authorize_game(DB, PlayerUUID, Password, GameUUID) of
+        {ok, true} ->
+            do_list(DB, GameUUID, PlayerUUID);
+        {error, Error} ->
+            ?ERR("Failed to list saves for game=~p and player=~p: ~p", 
+                [GameUUID, PlayerUUID, Error]),
             {error, Error}
     end.
 
@@ -80,7 +96,7 @@ delete(DB, Args) ->
 %% INTERNAL FUNCTIONS
 %% ############################################################### 
 
-do_register(DB, Doc, Files) ->
+do_create(DB, Doc, Files) ->
     database:save_doc(DB, Doc, Files).
 
 do_read(DB, SaveUUID) ->
@@ -93,6 +109,16 @@ do_read(DB, SaveUUID) ->
             {error, Error}
     end.
 
+do_list(DB, GameUUID, PlayerUUID) ->
+    View = {<<"game_saves">>, <<"player_game">>},
+    Keys = {key, views:keys([PlayerUUID, GameUUID])},
+    case database:read_doc(DB, View, [Keys]) of
+        {ok, Result} ->
+            {ok, Result};
+        {error, Error} ->
+            {error, Error}
+    end.
+ 
 do_delete(DB, SaveUUID) ->
     case database:delete_doc(DB, SaveUUID) of
         {ok, Doc} ->

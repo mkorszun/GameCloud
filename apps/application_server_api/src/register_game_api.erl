@@ -14,8 +14,15 @@
 
 out(A) ->
     Args = yaws_api:parse_post(A),
-    Register = fun() -> game:create(Args) end,
-    case request:execute(validate(), Args, Register) of
+    Fun = fun() -> game:create(Args) end,
+    request(request:get_method(A), validate(), Args, Fun).
+
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ############################################################### 
+
+request('POST', ValidationList, Args, Fun) ->
+    case request:execute(ValidationList, Args, Fun) of
         {ok, Doc} ->
             [{status, 200}, {content, "application/json", response:ok(document:get_id(Doc))}];
         {error, developer_not_found} ->
@@ -26,11 +33,14 @@ out(A) ->
             [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
             [{status, 500}, {content, "application/json", response:error("Internal error")}]
-    end.
+    end;
 
-%% ###############################################################
+request(_, _, _, _) ->
+    [{status, 405}, {content, "application/json", response:error("Method not allowed")}].
+
+%% ############################################################### 
 %% VALIDATE PARAMS
-%% ###############################################################
+%% ############################################################### 
 
 validate() ->
     [

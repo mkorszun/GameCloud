@@ -15,7 +15,7 @@ ok(Res) ->
 error(Res) ->
 	to_json(error, Res).
 
-to_json(Key, Res) when is_list(Res) ->
+to_json(Key, [H|_] = Res) when is_list(Res), is_integer(H) ->
     to_json(Key, list_to_binary(Res));
 to_json(Key, Res) ->
     couchbeam_ejson:encode({[{Key, Res}]}).

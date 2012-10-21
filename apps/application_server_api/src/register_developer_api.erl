@@ -14,8 +14,15 @@
 
 out(A) ->
     Args = yaws_api:parse_post(A),
-    Register = fun() -> developer:create(Args) end,
-    case request:execute(validate(), Args, Register) of
+    Fun = fun() -> developer:create(Args) end,
+    request(request:get_method(A), validate(), Args, Fun).
+
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ############################################################### 
+
+request('POST', ValidationList, Args, Fun) ->
+    case request:execute(ValidationList, Args, Fun) of
         {ok, _} ->
             [{status, 200}, {content, "application/json", response:ok("ok")}];
         {error, developer_already_exists} ->
@@ -24,11 +31,14 @@ out(A) ->
             [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
             [{status, 500}, {content, "application/json", response:error("Internal error")}]
-    end.
+    end;
 
-%% ###############################################################
+request(_, _, _, _) ->
+    [{status, 405}, {content, "application/json", response:error("Method not allowed")}].
+
+%% ############################################################### 
 %% VALIDATE PARAMS
-%% ###############################################################
+%% ############################################################### 
 
 validate() ->
     [

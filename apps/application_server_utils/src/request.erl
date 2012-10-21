@@ -6,7 +6,13 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(request).
--export([execute/3]).
+-export([execute/3, get_method/1]).
+
+%% ###############################################################
+%% INCLUDES
+%% ############################################################### 
+
+-include_lib("yaws/include/yaws_api.hrl"). 
 
 %% ###############################################################
 %%
@@ -19,6 +25,9 @@ execute([{Name, Pattern, Code, Response} | T], Params, Logic) ->
         Value when is_list(Value) -> execute(T, Params, Logic)
     end.
  
+get_method(#arg{req = #http_request{method = Method}}) ->
+	Method.
+
 %% ###############################################################
 %% ###############################################################
 %% ###############################################################
