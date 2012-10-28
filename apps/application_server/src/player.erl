@@ -41,7 +41,7 @@ create(DB, Args) ->
         {ok, true} ->
             do_register(DB, Args);
         {error, Error} ->
-            ?ERR("Failed to create player for game=~p :~p", 
+            ?ERR("Failed to create player for game=~p: ~p", 
                 [GameUUID, Error]),
             {error, Error}
     end.

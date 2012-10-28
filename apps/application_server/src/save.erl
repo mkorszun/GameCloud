@@ -107,12 +107,7 @@ list2(PlayerUUID) ->
 list2(DB, PlayerUUID) ->
     View = {<<"game_saves">>, <<"player_game">>},
     Keys = {key, views:keys([PlayerUUID])},
-    case database:read_doc(DB, View, [Keys]) of
-        {ok, Result} ->
-            {ok, Result};
-        {error, Error} ->
-            {error, Error}
-    end.
+    database:read_doc(DB, View, [Keys]).
 
 %% ###############################################################
 %% DELETE
@@ -147,11 +142,15 @@ delete3(DB, PlayerUUID, SaveUUID) ->
     View = {<<"game_saves">>, <<"player_save">>},
     Keys = {key, views:keys([PlayerUUID, SaveUUID])},
     case database:delete_doc(DB, View, [Keys]) of
-        {ok, Doc} ->
+        {ok, [Doc]} ->
             {ok, Doc};
         {error, not_found} ->
+            ?ERR("Save=~p for player=~p not found", 
+                [SaveUUID, PlayerUUID]),
             {error, save_not_found};
         {error, Error} ->
+            ?ERR("Failed to delete save=~p for player=~p: ~p", 
+                [SaveUUID, PlayerUUID, Error]),
             {error, Error}
     end.
 

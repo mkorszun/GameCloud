@@ -108,7 +108,8 @@ delete2(DB, DeveloperId, Password, GameUUID) ->
             delete3(DB, GameUUID);
         {error, Error} ->
             ?ERR("Failed to delete game=~p for developer=~p: ~p",
-                [GameUUID, DeveloperId, Error])
+                [GameUUID, DeveloperId, Error]),
+            {error, Error}
     end.
 
 delete3(GameUUID) ->
@@ -121,8 +122,11 @@ delete3(DB, GameUUID) ->
         {ok, Doc} ->
             {ok, Doc};
         {error, not_found} ->
+            ?ERR("Game=~p not found", [GameUUID]),
             {error, game_not_found};
         {error, Error} ->
+            ?ERR("Failed to delete game=~p: ~p",
+                [GameUUID, Error]),
             {error, Error}
     end.
 
