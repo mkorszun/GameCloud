@@ -14,7 +14,7 @@
 
 out(A) ->
     Args = yaws_api:parse_query(A),
-    Fun = fun() -> save:list(Args) end,
+    Fun = fun() -> save:list1(Args) end,
     request(request:get_method(A), validate(), Args, Fun).
 
 %% ###############################################################
@@ -49,9 +49,7 @@ validate() ->
         {"player_uuid", undefined, 400, "Missing player uuid"},
         {"player_uuid", [], 400, "Empty player uuid"},
         {"password", undefined, 400, "Missing password"},
-        {"password", [], 400, "Empty password"},
-        {"game_uuid", undefined, 400, "Missing game uuid"},
-        {"game_uuid", [], 400, "Empty game uuid"}
+        {"password", [], 400, "Empty password"}
     ].
 
 %% ###############################################################

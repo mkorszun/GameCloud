@@ -52,12 +52,14 @@ delete_doc(DB, Id) ->
     end.
 
 delete_doc(DB, View, Keys) ->
-    case couchbeam_view:first(DB, View, Keys) of
-        {ok, Row} ->
-            Doc = document:read(<<"value">>, Row),
-            couchbeam:delete_doc(DB, Doc);
+    Fun = fun(R, A) -> [document:read(<<"value">>, R) | A] end,
+    case couchbeam_view:fold(Fun, [], DB, View, Keys) of
         {error, Reason} ->
-            {error, Reason}
+            {error, Reason};
+        [] ->
+            {error, not_found};
+        Rows ->
+            {ok, [couchbeam:delete_doc(DB, Doc) || Doc <- Rows]}
     end.
 
 exists(DB, Id) ->

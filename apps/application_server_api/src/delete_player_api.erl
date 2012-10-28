@@ -1,20 +1,20 @@
-%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @author Mateusz Korszun <mkorszun@gmail.com>
 %%% @copyright (C) 2012, GameCloud
 %%% @doc
-%%% Delete save API
+%%% Delete player API
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
--module(delete_save_api).
+-module(delete_player_api).
 -export([out/1]).
 
 %% ###############################################################
-%% CALLBACK FUNCTION 
+%% CALLBACK FUNCTION
 %% ############################################################### 
 
 out(A) ->
     Args = yaws_api:parse_query(A),
-    Fun = fun() -> save:delete1(Args) end,
+    Fun = fun() -> player:delete1(Args) end,
     request(request:get_method(A), validate(), Args, Fun).
 
 %% ###############################################################
@@ -27,14 +27,12 @@ request('DELETE', ValidationList, Args, Fun) ->
             [{status, 200}, {content, "application/json", response:ok("ok")}];
         {error, player_not_found} ->
             [{status, 404}, {content, "application/json", response:error("Player not found")}];
-        {error, save_not_found} ->
-            [{status, 404}, {content, "application/json", response:error("Save not found")}];
         {error, unauthorized} ->
             [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
         {error, {missing_param, Code, Message}} ->
             [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
-            [{status, 500}, {content, "application/json", response:error("Internal error")}]
+            [{status, 500}, {content, "text/xml", response:error("Internal error")}]
     end;
 
 request(_, _, _, _) ->
@@ -49,11 +47,9 @@ validate() ->
         {"player_uuid", undefined, 400, "Missing player uuid"},
         {"player_uuid", [], 400, "Empty player uuid"},
         {"password", undefined, 400, "Missing player password"},
-        {"password", [], 400, "Empty player password"},
-        {"save_uuid", undefined, 400, "Missing save uuid"},
-        {"save_uuid", [], 400, "Empty save uuid"}
+        {"password", [], 400, "Empty player password"}
     ].
 
-%% ############################################################### 
-%% ############################################################### 
+%% ###############################################################
+%% ###############################################################
 %% ############################################################### 

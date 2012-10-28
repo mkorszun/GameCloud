@@ -9,8 +9,10 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([create/1, delete/1, authorize/2, authorize_game/3, exists/3]).
--export([create/2, delete/2, authorize/3, authorize_game/4, exists/4]).
+-export([create/1, create/2]).
+-export([exists1/3, exists1/4, exists2/2, exists2/3]).
+-export([authorize1/2, authorize1/3, authorize2/3, authorize2/4]).
+-export([delete1/1, delete1/2, delete2/2, delete2/3, delete3/1, delete3/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -35,69 +37,119 @@ create(DB, Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),
     DevPassword = proplists:get_value("dev_password", Args),
     GameUUID = proplists:get_value("game_uuid", Args),
-    case game:exists(DB, DeveloperId, DevPassword, GameUUID) of
+    case game:exists1(DB, DeveloperId, DevPassword, GameUUID) of
         {ok, true} ->
             do_register(DB, Args);
         {error, Error} ->
-            ?ERR("Failed to create player for game id=~p :~p", [GameUUID, Error]),
+            ?ERR("Failed to create player for game=~p :~p", 
+                [GameUUID, Error]),
             {error, Error}
     end.
 
-delete(Args) ->
-    delete(application_server_db:connection(), Args).
+%% ###############################################################
+%% DELETE
+%% ############################################################### 
 
-delete(DB, Args) ->
+delete1(Args) ->
+    delete1(application_server_db:connection(), Args).
+
+delete1(DB, Args) ->
     PlayerUUID = proplists:get_value("player_uuid", Args),
     Password = proplists:get_value("password", Args),
-    case authorize(DB, PlayerUUID, Password) of
+    delete2(DB, PlayerUUID, Password).
+
+delete2(PlayerUUID, Password) ->
+    delete2(application_server_db:connection(), PlayerUUID, Password).
+
+delete2(DB, PlayerUUID, Password) ->
+    case authorize1(DB, PlayerUUID, Password) of
         {ok, true} ->
-            do_delete(DB, Args);
+            delete3(DB, PlayerUUID);
         {error, Error} ->
-            ?ERR("Failed to delete player ~p: ~p", [PlayerUUID, Error]),
+            ?ERR("Failed to delete player=~p: ~p", 
+                [PlayerUUID, Error]),
             {error, Error}
     end.
 
-authorize(PlayerUUID, Password) ->
-    authorize(application_server_db:connection(), PlayerUUID, Password).
+delete3(PlayerUUID) ->
+    delete3(application_server_db:connection(), PlayerUUID).
 
-authorize(DB, PlayerUUID, Password) ->
+delete3(DB, PlayerUUID) ->
+    case database:delete_doc(DB, PlayerUUID) of
+        {ok, Doc} ->
+            {ok, Doc};
+        {error, not_found} ->
+            ?ERR("Failed to find player=~p", 
+                [PlayerUUID]),
+            {error, player_not_found};
+        {error, Error} ->
+            ?ERR("Failed to delete player=~p: ~p", 
+                [PlayerUUID, Error]),
+            {error, Error}
+    end.
+
+%% ###############################################################
+%% AUTHORIZE
+%% ############################################################### 
+
+authorize1(PlayerUUID, Password) ->
+    authorize1(application_server_db:connection(), PlayerUUID, Password).
+
+authorize1(DB, PlayerUUID, Password) ->
     case database:read_doc(DB, PlayerUUID) of
         {ok, Doc} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
         {error, not_found} ->
-            ?ERR("Failed to find player id=~p", [PlayerUUID]),
+            ?ERR("Failed to find player id=~p", 
+                [PlayerUUID]),
             {error, player_not_found};
         {error, Error} ->
-            ?ERR("Failed to find player id=~p: ~p", [PlayerUUID, Error]),
+            ?ERR("Failed to find player id=~p: ~p", 
+                [PlayerUUID, Error]),
             {error, Error}
     end.
 
-authorize_game(PlayerUUID, Password, GameUUID) ->
-    authorize_game(application_server_db:connection(), PlayerUUID, Password, GameUUID).
+authorize2(PlayerUUID, Password, SaveUUID) ->
+    authorize2(application_server_db:connection(), PlayerUUID, Password, SaveUUID).
 
-authorize_game(DB, PlayerUUID, Password, GameUUID) ->
+authorize2(DB, PlayerUUID, Password, SaveUUID) ->
     View = {<<"players">>, <<"by_game">>},
-    Keys = {key, views:keys([PlayerUUID, GameUUID])},
+    Keys = {key, views:keys([PlayerUUID, SaveUUID])},
     case database:read_doc(DB, View, [Keys]) of
         {ok, [Doc]} ->
             authorization:authorize(player, Doc, PlayerUUID, Password);
         {ok, []} ->
-            ?ERR("Failed to find player id=~p for game id=~p", 
-                [PlayerUUID, GameUUID]),
             {error, player_not_found};
         {error, Error} ->
-            ?ERR("Failed to find player id=~p for game id=~p: ~p", 
-                [PlayerUUID, GameUUID, Error]),
             {error, Error}
     end.
 
-exists(PlayerUUID, Password, GameUUID) ->
-    exists(application_server_db:connection(), PlayerUUID, Password, GameUUID).
+%% ###############################################################
+%% EXISTS
+%% ############################################################### 
 
-exists(DB, PlayerUUID, Password, GameUUID) ->
-    case authorize(DB, PlayerUUID, Password) of
+exists1(PlayerUUID, Password, GameUUID) ->
+    exists1(application_server_db:connection(), PlayerUUID, Password, GameUUID).
+
+exists1(DB, PlayerUUID, Password, GameUUID) ->
+    case authorize1(DB, PlayerUUID, Password) of
         {ok, true} ->
-            do_exists(DB, PlayerUUID, GameUUID);
+            exists2(DB, PlayerUUID, GameUUID);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+exists2(PlayerUUID, GameUUID) ->
+    exists2(application_server_db:connection(), PlayerUUID, GameUUID).
+
+exists2(DB, PlayerUUID, GameUUID) ->
+    View = {<<"players">>, <<"by_game">>},
+    Keys = {key, views:keys([PlayerUUID, GameUUID])},
+    case database:exists(DB, View, [Keys]) of
+        {ok, true} ->
+            {ok, true};
+        {error, not_found} ->
+            {error, game_not_found};
         {error, Error} ->
             {error, Error}
     end.
@@ -106,32 +158,10 @@ exists(DB, PlayerUUID, Password, GameUUID) ->
 %% INTERNAL FUNCTIONS
 %% ############################################################### 
 
-do_delete(DB, Args) ->
-    case database:delete_doc(DB, proplists:get_value("player_uuid", Args)) of
-        {ok, Doc} ->
-            {ok, Doc};
-        {error, not_found} ->
-            {error, player_not_found};
-        {error, Error} ->
-            {error, Error}
-    end.
-
 do_register(DB, Args) ->
     case database:save_doc(DB, build_doc(Args)) of
         {ok, Doc} ->
             update_password(DB, Doc, proplists:get_value("password", Args));
-        {error, Error} ->
-            {error, Error}
-    end.
-
-do_exists(DB, PlayerUUID, GameUUID) ->
-    View = {<<"players">>, <<"by_game">>},
-    Keys = {key, views:keys([PlayerUUID, GameUUID])},
-    case database:exists(DB, View, [Keys]) of
-        {ok, true} ->
-            {ok, true};
-        {error, not_found} ->
-            {error, game_not_found};
         {error, Error} ->
             {error, Error}
     end.

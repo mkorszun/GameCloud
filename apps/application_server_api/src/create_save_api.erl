@@ -63,10 +63,10 @@ validate() ->
         {"player_uuid", [], 400, "Empty player uuid"},
         {"password", undefined, 400, "Missing player password"},
         {"password", [], 400, "Empty player password"},
-        {"game_uuid", undefined, 400, "Missing game uuid"},
-        {"game_uuid", [], 400, "Empty game uuid"},
         {"save_name", undefined, 400, "Missing save name"},
-        {"save_name", [], 400, "Empty save name"}
+        {"save_name", [], 400, "Empty save name"},
+        {"date", undefined, 400, "Missing date"},
+        {"date", [], 400, "Empty date"}
     ].
 
 %% ###############################################################

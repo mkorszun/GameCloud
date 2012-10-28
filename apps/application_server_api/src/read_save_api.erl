@@ -14,7 +14,7 @@
 
 out(A) ->
     Args = yaws_api:parse_query(A),
-    Fun = fun() -> save:read(Args) end,
+    Fun = fun() -> save:read1(Args) end,
     request(request:get_method(A), validate(), Args, Fun).
 
 %% ###############################################################

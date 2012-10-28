@@ -1,20 +1,20 @@
 %%% @author Mateusz Korszun <mkorszun@gmail.com> 
 %%% @copyright (C) 2012, GameCloud
 %%% @doc
-%%% Delete save API
+%%% Delete game API
 %%% @end
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
--module(delete_save_api).
+-module(delete_game_api).
 -export([out/1]).
 
 %% ###############################################################
-%% CALLBACK FUNCTION 
-%% ############################################################### 
+%% CALLBACK FUNCTION
+%% ###############################################################
 
 out(A) ->
     Args = yaws_api:parse_query(A),
-    Fun = fun() -> save:delete1(Args) end,
+    Fun = fun() -> game:delete1(Args) end,
     request(request:get_method(A), validate(), Args, Fun).
 
 %% ###############################################################
@@ -23,14 +23,14 @@ out(A) ->
 
 request('DELETE', ValidationList, Args, Fun) ->
     case request:execute(ValidationList, Args, Fun) of
-        {ok, _} ->
+        {ok, Doc} ->
             [{status, 200}, {content, "application/json", response:ok("ok")}];
-        {error, player_not_found} ->
-            [{status, 404}, {content, "application/json", response:error("Player not found")}];
-        {error, save_not_found} ->
-            [{status, 404}, {content, "application/json", response:error("Save not found")}];
+        {error, developer_not_found} ->
+            [{status, 404}, {content, "appllication/json", response:error("Developer not found")}];
+        {error, game_not_found} ->
+            [{status, 404}, {content, "appllication/json", response:error("Game not found")}];
         {error, unauthorized} ->
-            [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
+            [{status, 401}, {content, "appllication/json", response:error("Unauthorized")}];
         {error, {missing_param, Code, Message}} ->
             [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
@@ -46,14 +46,14 @@ request(_, _, _, _) ->
 
 validate() ->
     [
-        {"player_uuid", undefined, 400, "Missing player uuid"},
-        {"player_uuid", [], 400, "Empty player uuid"},
-        {"password", undefined, 400, "Missing player password"},
-        {"password", [], 400, "Empty player password"},
-        {"save_uuid", undefined, 400, "Missing save uuid"},
-        {"save_uuid", [], 400, "Empty save uuid"}
+        {"developer_id", undefined, 400, "Missing developer id"},
+        {"developer_id", [], 400, "Empty developer id"},
+        {"password", undefined, 400, "Missing developer password"},
+        {"password", [], 400, "Empty developer password"},
+        {"game_uuid", undefined, 400, "Missing game uuid"},
+        {"game_uuid", [], 400, "Empty game uuid"}
     ].
 
-%% ############################################################### 
-%% ############################################################### 
-%% ############################################################### 
+%% ###############################################################
+%% ###############################################################
+%% ###############################################################
