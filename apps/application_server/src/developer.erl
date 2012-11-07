@@ -35,13 +35,14 @@ create(DB, Args) ->
     case database:save_doc(DB, build_doc(Args)) of
         {ok, CreatedDoc} ->
             Id = proplists:get_value("developer_id", Args),
+            ?INF("Developer=~s created", [Id]),
             {ok, CreatedDoc};
         {error, conflict} ->
             Id = proplists:get_value("developer_id", Args),
-            ?ERR("Developer=~p already exists", [Id]),
+            ?ERR("Developer=~s already exists", [Id]),
             {error, developer_already_exists};
         {error, Error} ->
-            ?ERR("Failed to create developer=~p: ~p", [Error]),
+            ?ERR("Failed to create developer=~s: ~p", [Error]),
             {error, Error}
     end.
 
@@ -51,12 +52,13 @@ authorize(DeveloperId, Password) ->
 authorize(DB, DeveloperId, Password) ->
     case database:read_doc(DB, DeveloperId) of
         {ok, Doc} ->
+            ?DBG("Developer=~s found, authorizing", [DeveloperId]),
             authorization:authorize(developer, Doc, DeveloperId, Password);
         {error, not_found} ->
-            ?ERR("Developer=~p not found", [DeveloperId]),
+            ?ERR("Developer=~s not found", [DeveloperId]),
             {error, developer_not_found};
         {error, Error} ->
-            ?ERR("Failed to authorize developer=~p: ~p", [DeveloperId, Error]),
+            ?ERR("Failed to authorize developer=~s: ~p", [DeveloperId, Error]),
             {error, Error}
     end.
 

@@ -1,1 +1,3 @@
 -define(ERR(Format, Params), lager:error(Format, Params)).
+-define(INF(Format, Params), lager:info(Format, Params)).
+-define(DBG(Format, Params), lager:debug(Format, Params)).
