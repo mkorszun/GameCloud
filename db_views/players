@@ -1,0 +1,11 @@
+{
+   "_id": "_design/players",
+   "views": {
+       "by_game": {
+           "map": "function(doc) { if (doc.type == 'player')  emit([doc._id, doc.game_uuid], doc) }"
+       },
+       "all": {
+           "map": "function(doc) { if (doc.type == 'player')  emit([doc.game_uuid], doc._id) }"
+       }
+   }
+}

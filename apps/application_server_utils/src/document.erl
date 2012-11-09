@@ -6,8 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([create/1, read/2, read/3, get_id/1, delete/2, set_value/3]).
--export([exists/2]).
+-export([create/1, read/2, read/3, get_id/1, delete/2, set_value/3, rename/2]).
 
 %% ###############################################################
 %%
@@ -39,23 +38,12 @@ set_value(Key, Value, Doc) when is_list(Value) ->
 set_value(Key, Value, Doc) ->
     couchbeam_doc:set_value(Key, Value, Doc).
 
-exists(_, []) ->
-    false;
-exists(KV, [{_} = Doc | T]) ->
-    case exists(KV, Doc) of
-        true -> true;
-        false -> exists(KV, T)
-    end;
-            
-exists(KV, {Doc}) when is_list(Doc) ->
-    exists(KV, Doc);
-exists({Key, Value}, Doc) when is_list(Doc), is_list(Key), is_list(Value) ->
-    exists({list_to_binary(Key), list_to_binary(Value)}, Doc);
-exists({Key, Value}, Doc) when is_binary(Key), is_binary(Value) ->
-    case proplists:get_value(Key, Doc) of
-        Value -> true;
-        _ -> false
-    end.        
+rename(Doc, []) ->
+    Doc;
+rename(Doc, [{Old, New} | T]) ->
+    Val = read(Old, Doc),
+    Doc1 = delete(Doc, [Old]),
+    rename(set_value(New, Val, Doc1), T).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS

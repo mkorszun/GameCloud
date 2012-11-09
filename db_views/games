@@ -1,0 +1,8 @@
+{
+   "_id": "_design/games",
+   "views": {
+       "by_developer": {
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], doc) }"
+       }
+   }
+}

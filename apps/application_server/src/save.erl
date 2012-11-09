@@ -25,6 +25,7 @@
 %% ############################################################### 
 
 -define(TYPE, {"type", "save"}).
+-define(MAP, [{<<"_id">>, <<"save_uuid">>}, {<<"_attachments">>, <<"attachments">>}]).
 
 %% ###############################################################
 %% API
@@ -81,7 +82,9 @@ read2(DB, SaveUUID) ->
         {ok, Doc} ->
             ?DBG("Save=~s found, getting attachments",
                 [SaveUUID]),
-            {ok, attachments:get(DB, Doc, true)};
+            Doc1 = attachments:get(DB, Doc, true),
+            Doc2 = document:delete(Doc1, [<<"_rev">>]),
+            {ok, document:rename(Doc2, ?MAP)};
         {error, not_found} ->
             ?DBG("Failed to find save=~s",
                 [SaveUUID]),
