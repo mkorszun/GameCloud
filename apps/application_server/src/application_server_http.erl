@@ -30,7 +30,14 @@ start_http_server(Supervisor) ->
 
     GconfList = [{ebin_dir, [EbinDir]}, {id, ?ID}],    
     SconfList = [{docroot, Docroot}, {port, Port}, {listen, Addr}, 
-                 {errormod_crash, yaws_error_reporter}, {appmods, Mods}],
+                 {errormod_crash, yaws_error_reporter}, {appmods, Mods}
+                 %{ssl, [{keyfile, ""}, 
+                 %{certfile, ""},
+                 %{verify, verify_peer},
+                 %{cacertfile, ""},
+                 %{fail_if_no_peer_cert, false}
+                 %]}
+                 ],
           
     {ok, SCList, GC, ChildSpecs} =  
         yaws_api:embedded_start_conf(Docroot, SconfList, GconfList, ?ID),
