@@ -48,7 +48,7 @@ attachments(_, _, {Name, Properties}, false) ->
 attachments(DB, Id, {Name, Properties}, true) ->
     {ok, Content} = couchbeam:fetch_attachment(DB, Id, Name),
     Doc = document:delete(Properties, ?EXCLUDE),
-    {Name, document:set_value(<<"content">>, Content, Doc)}.
+    {Name, document:set_value(<<"content">>, base64:encode(Content), Doc)}.
 
 %% ###############################################################
 %% ###############################################################
