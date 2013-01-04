@@ -31,6 +31,8 @@ request('POST', ValidationList, Args, Fun) ->
             [{status, 404}, {content, "appllication/json", response:error("Game not found")}];
         {error, unauthorized} ->
             [{status, 401}, {content, "application/json", response:error("Unauthorized")}];
+        {error, player_already_exists} ->
+            [{status, 403}, {content, "appllication/json", response:error("Player already exists")}];
         {error, {missing_param, Code, Message}} ->
             [{status, Code}, {content, "appllication/json", response:error(Message)}];
         {error, _Error} ->
@@ -50,8 +52,8 @@ validate() ->
         {"developer_id", [], 400, "Empty developer id"},
         {"dev_password", undefined, 400, "Missing developer password"},
         {"dev_password", [], 400, "Empty developer password"},
-        {"game_uuid", undefined, 400, "Missing game uuid"},
-        {"game_uuid", [], 400, "Empty game uuid"},
+        {"game_key", undefined, 400, "Missing game key"},
+        {"game_key", [], 400, "Empty game key"},
         {"player_id", undefined, 400, "Missing player id"},
         {"player_id", [], 400, "Empty player id"},
         {"password", undefined, 400, "Missing player password"},

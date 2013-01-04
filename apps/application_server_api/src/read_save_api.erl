@@ -46,12 +46,12 @@ request(_, _, _, _) ->
 
 validate() ->
     [
-        {"player_uuid", undefined, 400, "Missing player uuid"},
-        {"player_uuid", [], 400, "Empty player uuid"},
+        {"player_id", undefined, 400, "Missing player id"},
+        {"player_id", [], 400, "Empty player id"},
         {"password", undefined, 400, "Missing password"},
         {"password", [], 400, "Empty password"},
-        {"save_uuid", undefined, 400, "Missing save uuid"},
-        {"save_uuid", [], 400, "Empty save uuid"}
+        {"save_key", undefined, 400, "Missing save key"},
+        {"save_key", [], 400, "Empty save key"}
     ].
 
 %% ###############################################################

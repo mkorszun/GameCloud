@@ -19,12 +19,6 @@
 -include("logger.hrl").
 
 %% ###############################################################
-%% MACROS
-%% ###############################################################
-
--define(TYPE, {"type", "developer"}).
-
-%% ###############################################################
 %% API
 %% ###############################################################
 
@@ -71,7 +65,8 @@ build_doc(Args) ->
     Password = proplists:get_value("password", Args),
     Email = proplists:get_value("email", Args),
     PasswordHash = cryptography:sha(Password, DeveloperId),
-    document:create([{"_id", DeveloperId}, {"password", PasswordHash}, {"email", Email}, ?TYPE]).
+    document:create([{"_id", DeveloperId}, {"password", PasswordHash}, 
+        {"email", Email}, {"type", "developer"}]).
 
 %% ###############################################################
 %%
