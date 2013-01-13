@@ -1,7 +1,13 @@
 {
    "_id": "_design/games",
    "views": {
-       "by_developer": {
+       "read": {
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], {key:doc._id, name:doc.name, description:doc.description, game_link:doc.game_link, platform:doc.platform, market_link:doc.market_link}) }"
+       },
+       "list": {
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id], {key:doc._id, name:doc.name, description:doc.description, game_link:doc.game_link, platform:doc.platform, market_link:doc.market_link}) }"
+       },
+       "delete": {
            "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], doc) }"
        }
    }

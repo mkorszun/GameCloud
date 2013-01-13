@@ -11,7 +11,6 @@
 -export([read/2, read/3]).
 -export([delete/2, delete/3]).
 -export([exists/2, exists/3]).
--export([list_players/2, list_players/3]).
 
 %% ###############################################################
 %% API
@@ -70,22 +69,10 @@ exists(DB, DeveloperId, GameKey) ->
     database:exists(DB, View, [Keys]).
 
 %% ###############################################################
-%% LIST PLAYERS
-%% ###############################################################
-
-list_players(DeveloperId, GameKey) ->
-    list_players(application_server_db:connection(), DeveloperId, GameKey).
-
-list_players(DB, DeveloperId, GameKey) ->
-    View = {<<"players">>, <<"all">>},
-    Keys = {key, views:keys([DeveloperId, GameKey])},
-    database:read_doc(DB, View, [Keys]).
-
-%% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
-field_mapping(Developer) ->
+field_mapping(_Developer) ->
     [{<<"developer_id">>, {<<"developer_id">>, fun(V) -> V end}}, 
      {<<"name">>, {<<"name">>, fun(V) -> V end}},
      {<<"description">>, {<<"description">>, fun(V) -> V end}},

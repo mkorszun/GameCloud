@@ -1,31 +1,27 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
-
-%% @doc Supervisor for the game_cloud_api application.
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @copyright (C) 2012, GameCloud
+%%% @doc
+%%% Supervisor
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(game_cloud_api_sup).
--author('author <author@example.com>').
-
 -behaviour(supervisor).
 
-%% External exports
 -export([start_link/0, upgrade/0]).
-
-%% supervisor callbacks
 -export([init/1]).
 
-%% @spec start_link() -> ServerRet
-%% @doc API for starting the supervisor.
+%% ###############################################################
+%% API FUNCTIONS
+%% ############################################################### 
+
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% @spec upgrade() -> ok
-%% @doc Add processes if necessary.
 upgrade() ->
     {ok, {_, Specs}} = init([]),
 
-    Old = sets:from_list(
-            [Name || {Name, _, _, _} <- supervisor:which_children(?MODULE)]),
+    Old = sets:from_list([Name || {Name, _, _, _} <- supervisor:which_children(?MODULE)]),
     New = sets:from_list([Name || {Name, _, _, _, _, _} <- Specs]),
     Kill = sets:subtract(Old, New),
 
@@ -38,19 +34,18 @@ upgrade() ->
     [supervisor:start_child(?MODULE, Spec) || Spec <- Specs],
     ok.
 
-%% @spec init([]) -> SupervisorTree
-%% @doc supervisor callback.
+%% ###############################################################
+%% SUPERVISOR CALLBACKS
+%% ############################################################### 
+
 init([]) ->
-    Ip = case os:getenv("WEBMACHINE_IP") of false -> "0.0.0.0"; Any -> Any end,
     {ok, App} = application:get_application(?MODULE),
-    {ok, Dispatch} = file:consult(filename:join([priv_dir(App),
-                                                 "dispatch.conf"])),
-    Port = case os:getenv("WEBMACHINE_PORT") of
-            false -> 8000;
-            AnyPort -> AnyPort
-          end,
+    {ok, Dispatch} = file:consult(filename:join([priv_dir(App), "dispatch.conf"])),
+    {ok, Addr} = application:get_env(App, server_addr),
+    {ok, Port} = application:get_env(App, server_port),
+
     WebConfig = [
-                 {ip, Ip},
+                 {ip, inet_parse:ntoa(Addr)},
                  {port, Port},
                  {log_dir, "priv/log"},
                  {dispatch, Dispatch}],
@@ -60,8 +55,10 @@ init([]) ->
     Processes = [Web],
     {ok, { {one_for_one, 10, 10}, Processes} }.
 
-%%
-%% @doc return the priv dir
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ############################################################### 
+
 priv_dir(Mod) ->
     case code:priv_dir(Mod) of
         {error, bad_name} ->
@@ -70,3 +67,7 @@ priv_dir(Mod) ->
         PrivDir ->
             PrivDir
     end.
+
+%% ###############################################################
+%%
+%% ############################################################### 

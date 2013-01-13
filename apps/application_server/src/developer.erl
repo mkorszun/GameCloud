@@ -41,7 +41,7 @@ read(Id) ->
     read(application_server_db:connection(), Id).
 
 read(DB, Id) ->
-    View = {<<"developer">>, <<"read">>},
+    View = {<<"developers">>, <<"read">>},
     Keys = {key, views:keys([Id])},
     database:read_doc(DB, View, [Keys]).
 
@@ -89,7 +89,9 @@ list_games(DB, Id) ->
 field_mapping(Developer) ->
     [{<<"id">>, {<<"_id">>, fun(V) -> V end}}, 
      {<<"email">>, {<<"email">>, fun(V) -> V end}},
-     {<<"password">>, {<<"password">>, fun(V) -> Id = proplists:get_value(<<"id">>, Developer), cryptography:sha(V, Id) end}}].
+     {<<"password">>, {<<"password">>, fun(V) -> Id = 
+        proplists:get_value(<<"id">>, Developer), 
+        authorization:sha(V, Id) end}}].
 
 build_doc(Developer) ->
     Mapping = field_mapping(Developer),

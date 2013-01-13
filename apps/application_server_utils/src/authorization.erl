@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(authorization).
--export([authorize/3]).
+-export([authorize/3, sha/2]).
 
 %% ###############################################################
 %%
@@ -14,7 +14,13 @@
 
 authorize(Doc, Id, Password) ->
     Password1 = document:read(<<"password">>, Doc),
-    auth(Password1, cryptography:sha(Password, Id)).
+    auth(Password1, sha(Password, Id)).
+
+sha(Data, Salt) ->
+    C1 = crypto:sha_init(),
+    C2 = crypto:sha_update(C1, Data),
+    C3 = crypto:sha_update(C2, Salt),
+    bin_to_hexstr(crypto:sha_final(C3)).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
@@ -27,6 +33,10 @@ auth(P1, P2) when is_list(P2) ->
 
 auth(P, P) -> true;
 auth(_, _) -> false.
+
+bin_to_hexstr(Bin) ->
+  lists:flatten([io_lib:format("~2.16.0B", [X]) ||
+    X <- binary_to_list(Bin)]).
 
 %% ###############################################################
 %% ###############################################################

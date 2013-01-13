@@ -70,7 +70,7 @@ forbidden(#wm_reqdata{method = 'POST'} = ReqData, State) ->
 		{Game, NewState} ->
 			case game:create([{<<"developer_id">>, DeveloperId} | Game]) of
 				{ok, Doc} ->
-					{false, ReqData, [{<<"id">>, document:get_id(Doc)}]};
+					{false, ReqData, [{<<"id">>, document:get_id(Doc)} | NewState]};
 				{error, {bad_data, Reason}} ->
 					?ERR("Failed to create game for developer id=~s, bad data: ~p", 
 						[DeveloperId, Reason]),

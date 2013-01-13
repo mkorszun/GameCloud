@@ -1,10 +1,25 @@
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @copyright (C) 2012, GameCloud
+%%% @doc
+%%% Utils
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
+
 -module(game_cloud_api_utils).
 
 -compile([{parse_transform, lager_transform}]).
 
 -export([get_request_body/3, authorize/3, is_authorized/3]).
 
+%% ###############################################################
+%% INCLUDE
+%% ###############################################################
+
 -include("logger.hrl").
+
+%% ###############################################################
+%%
+%% ###############################################################
 
 get_request_body(ReqData, undefined, Key) ->
 	Body = wrq:req_body(ReqData),
@@ -52,27 +67,8 @@ is_authorized(developer, ReqData, Context) ->
 	        		{{halt, 500}, Data, Ctx}
 	        end
 	    end
-	);
+	).
 
-is_authorized(player, ReqData, Context) ->
-    authorize(ReqData, Context,
-		fun(Data, Ctx, User, Pass) ->
-            GameId = dict:fetch(game, wrq:path_info(Data)),
-	        case player:authorize(GameId, User, Pass) of
-	    		true ->
-	        		{true, Data, [{user, User}]};
-	        	false ->
-	        		?ERR("Player id=~s not authorized", 
-	        			[User]),
-	        		{"Basic realm=GameCloud", Data, Ctx};
-	        	{error, not_found} ->
-	        		?ERR("Failed to authorize player id=~s: not_found", 
-	        			[User]),
-	        		{{halt, 404}, Data, Ctx};
-	        	{error, Error} ->
-	        		?ERR("Failed to authorize player id=~s: ~s", 
-	        			[User, Error]),
-	        		{{halt, 500}, Data, Ctx}
-	        end
-	    end
-	).	
+%% ###############################################################
+%%
+%% ###############################################################

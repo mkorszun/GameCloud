@@ -1,0 +1,8 @@
+{
+   "_id": "_design/developers",
+   "views": {
+       "read": {
+           "map": "function(doc) { if (doc.type == 'developer')  emit([doc._id], {id:doc._id, email:doc.email}) }"
+       }
+   }
+}

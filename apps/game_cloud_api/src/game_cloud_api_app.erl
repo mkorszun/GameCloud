@@ -1,21 +1,25 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
-
-%% @doc Callbacks for the game_cloud_api application.
+%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @copyright (C) 2012, GameCloud
+%%% @doc
+%%% API application
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(game_cloud_api_app).
--author('author <author@example.com>').
-
 -behaviour(application).
--export([start/2,stop/1]).
 
+-export([start/2, stop/1]).
 
-%% @spec start(_Type, _StartArgs) -> ServerRet
-%% @doc application start callback for game_cloud_api.
+%% ###############################################################
+%% APPLICATION CALLBACKS
+%% ###############################################################
+
 start(_Type, _StartArgs) ->
     game_cloud_api_sup:start_link().
 
-%% @spec stop(_State) -> ServerRet
-%% @doc application stop callback for game_cloud_api.
 stop(_State) ->
     ok.
+
+%% ###############################################################
+%%
+%% ###############################################################
