@@ -7,66 +7,94 @@
 
 -module(developer).
 
--compile([{parse_transform, lager_transform}]).
-
--export([create/1, authorize/2]).
--export([create/2, authorize/3]).
-
-%% ###############################################################
-%% INCLUDE
-%% ###############################################################
-
--include("logger.hrl").
+-export([create/1, create/2]).
+-export([read/1, read/2]).
+-export([delete/1, delete/2]).
+-export([authorize/2, authorize/3]).
+-export([list_games/1, list_games/2]).
 
 %% ###############################################################
 %% API
 %% ###############################################################
 
-create(Args) ->
-    create(application_server_db:connection(), Args).
+%% ###############################################################
+%% CREATE
+%% ###############################################################
 
-create(DB, Args) ->
-    case database:save_doc(DB, build_doc(Args)) of
-        {ok, CreatedDoc} ->
-            Id = proplists:get_value("developer_id", Args),
-            ?INF("Developer=~s created", [Id]),
-            {ok, CreatedDoc};
-        {error, conflict} ->
-            Id = proplists:get_value("developer_id", Args),
-            ?ERR("Developer=~s already exists", [Id]),
-            {error, developer_already_exists};
-        {error, Error} ->
-            ?ERR("Failed to create developer=~s: ~p", [Error]),
-            {error, Error}
+create(Developer) ->
+    create(application_server_db:connection(), Developer).
+
+create(DB, Developer) ->
+    try build_doc(Developer) of
+        Document -> 
+            database:save_doc(DB, Document)
+    catch
+        _:Error ->
+            {error, {bad_data, Error}}
     end.
+    
+%% ###############################################################
+%% READ
+%% ###############################################################
 
-authorize(DeveloperId, Password) ->
-    authorize(application_server_db:connection(), DeveloperId, Password).
+read(Id) ->
+    read(application_server_db:connection(), Id).
 
-authorize(DB, DeveloperId, Password) ->
-    case database:read_doc(DB, DeveloperId) of
+read(DB, Id) ->
+    View = {<<"developer">>, <<"read">>},
+    Keys = {key, views:keys([Id])},
+    database:read_doc(DB, View, [Keys]).
+
+%% ###############################################################
+%% DELETE
+%% ###############################################################
+
+delete(Id) ->
+    delete(application_server_db:connection(), Id).
+
+delete(DB, Id) ->
+    database:delete_doc(DB, Id).
+
+%% ###############################################################
+%% AUTHORIZE
+%% ###############################################################
+
+authorize(Id, Password) ->
+    authorize(application_server_db:connection(), Id, Password).
+
+authorize(DB, Id, Password) ->
+    case database:read_doc(DB, Id) of
         {ok, Doc} ->
-            ?DBG("Developer=~s found, authorizing", [DeveloperId]),
-            authorization:authorize(developer, Doc, DeveloperId, Password);
-        {error, not_found} ->
-            ?ERR("Developer=~s not found", [DeveloperId]),
-            {error, developer_not_found};
+            authorization:authorize(Doc, Id, Password);
         {error, Error} ->
-            ?ERR("Failed to authorize developer=~s: ~p", [DeveloperId, Error]),
             {error, Error}
     end.
+
+%% ###############################################################
+%% LIST GAMES
+%% ###############################################################
+
+list_games(Id) ->
+    list_games(application_server_db:connection(), Id).
+
+list_games(DB, Id) ->
+    View = {<<"games">>, <<"list">>},
+    Keys = {key, views:keys([Id])},
+    database:read_doc(DB, View, [Keys], false).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
-build_doc(Args) ->
-    DeveloperId = proplists:get_value("developer_id", Args),
-    Password = proplists:get_value("password", Args),
-    Email = proplists:get_value("email", Args),
-    PasswordHash = cryptography:sha(Password, DeveloperId),
-    document:create([{"_id", DeveloperId}, {"password", PasswordHash}, 
-        {"email", Email}, {"type", "developer"}]).
+field_mapping(Developer) ->
+    [{<<"id">>, {<<"_id">>, fun(V) -> V end}}, 
+     {<<"email">>, {<<"email">>, fun(V) -> V end}},
+     {<<"password">>, {<<"password">>, fun(V) -> Id = proplists:get_value(<<"id">>, Developer), cryptography:sha(V, Id) end}}].
+
+build_doc(Developer) ->
+    Mapping = field_mapping(Developer),
+    Doc = document:build_doc(Developer, [], Mapping),
+    document:create([{<<"type">>, <<"developer">>} | Doc]).
 
 %% ###############################################################
 %%

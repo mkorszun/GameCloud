@@ -1,0 +1,18 @@
+%%-*- mode: erlang -*-
+{application, game_cloud_api,
+ [
+  {description, "game_cloud_api"},
+  {vsn, "1"},
+  {modules, []},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  inets,
+                  crypto,
+                  mochiweb,
+                  webmachine
+                 ]},
+  {mod, { game_cloud_api_app, []}},
+  {env, []}
+ ]}.

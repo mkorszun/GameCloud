@@ -3,6 +3,7 @@
 *~
 .#*
 #*
+priv
 apps/*/*/#*
 *.beam
 apps/*/ebin/*.app

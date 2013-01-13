@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([create/1, read/2, read/3, get_id/1, delete/2, set_value/3, rename/2]).
+-export([create/1, build_doc/3, read/2, read/3, get_id/1, delete/2, set_value/3, rename/2]).
 
 %% ###############################################################
 %%
@@ -14,6 +14,11 @@
 
 create(Doc) when is_list(Doc) -> doc(Doc);
 create({L} = Doc) when is_list(L) -> Doc.
+
+build_doc([], Doc, _) -> Doc;
+build_doc([{K, V} |T], Doc, Mapping) ->
+    {Key, Format} = proplists:get_value(K, Mapping),
+    build_doc(T, [{Key, Format(V)} | Doc], Mapping).
 
 read(Key, Doc) when is_list(Key) ->
     read(list_to_binary(Key), Doc);

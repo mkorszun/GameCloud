@@ -15,9 +15,7 @@
 %% ############################################################### 
 
 start(_StartType, _StartArgs) ->
-    Res = application_server_sup:start_link(),
-    application_server_http:start_http_server(application_server_sup),
-    Res.
+    application_server_sup:start_link().
 
 stop(_State) ->
     ok.

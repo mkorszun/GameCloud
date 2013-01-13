@@ -7,26 +7,17 @@
 
 -module(player).
 
--compile([{parse_transform, lager_transform}]).
-
 -export([create/1, create/2]).
--export([exists/2, exists/3]).
+-export([read/1, read/2]).
+-export([delete/1, delete/2]).
 -export([authorize/3, authorize/4]).
 
 %% ###############################################################
-%% INCLUDE
-%% ###############################################################
-
--include("logger.hrl").
-
-%% ###############################################################
-%% MACORS
+%% API
 %% ############################################################### 
 
--define(TYPE, {"type", "player"}).
-
 %% ###############################################################
-%% API
+%% CREATE
 %% ############################################################### 
 
 create(Args) ->
@@ -34,19 +25,28 @@ create(Args) ->
 
 create(DB, Args) ->
     DeveloperId = proplists:get_value("developer_id", Args),
-    DevPassword = proplists:get_value("dev_password", Args),
     GameKey = proplists:get_value("game_key", Args),
-    PlayerId = proplists:get_value("player_id", Args),
-    case game:exists1(DB, DeveloperId, DevPassword, GameKey) of
-        {ok, true} ->
-            ?DBG("Game=~s exists, creating player=~s",
-                [GameKey, PlayerId]),
-            do_register(DB, Args);
-        {error, Error} ->
-            ?ERR("Failed to create player=~s for game=~s: ~p",
-                [PlayerId, GameKey, Error]),
-            {error, Error}
-    end.
+    create(DB, Args, game:exists(DB, DeveloperId, GameKey)).
+
+%% ###############################################################
+%% READ
+%% ############################################################### 
+
+read(Id) ->
+    read(application_server_db:connection(), Id).
+
+read(DB, Id) ->
+    database:read_doc(DB, Id).
+
+%% ###############################################################
+%% DELETE
+%% ############################################################### 
+
+delete(Id) ->
+    delete(application_server_db:connection(), Id).
+
+delete(DB, Id) ->
+    database:delete(DB, Id).
 
 %% ###############################################################
 %% AUTHORIZE
@@ -56,45 +56,12 @@ authorize(GameKey, PlayerId, Password) ->
     authorize(application_server_db:connection(), GameKey, PlayerId, Password).
 
 authorize(DB, GameKey, PlayerId, Password) ->
-    View = {<<"players">>, <<"by_game">>},
+    View = {<<"players">>, <<"authorize">>},
     Keys = {key, views:keys([GameKey, PlayerId])},
     case database:read_doc(DB, View, [Keys]) of
-        {ok, [Doc]} ->
-            ?DBG("Player=~s found for game=~s, authorizing",
-                [PlayerId, GameKey]),
-            authorization:authorize(player, Doc, PlayerId, Password);
-        {ok, []} ->
-            ?ERR("Failed to find player=~s for game=~s",
-                [PlayerId, GameKey]),
-            {error, player_not_found};
+        {ok, Doc} ->
+            authorization:authorize(Doc, PlayerId, Password);
         {error, Error} ->
-            ?ERR("Failed to find player=~s for game=~s: ~p",
-                [PlayerId, GameKey, Error]),
-            {error, Error}
-    end.
-
-%% ###############################################################
-%% EXISTS
-%% ############################################################### 
-
-exists(GameKey, PlayerId) ->
-    exists(application_server_db:connection(), GameKey, PlayerId).
-
-exists(DB, GameKey, PlayerId) ->
-    View = {<<"players">>, <<"by_game">>},
-    Keys = {key, views:keys([GameKey, PlayerId])},
-    case database:exists(DB, View, [Keys]) of
-        {ok, true} ->
-            ?DBG("Player=~s found for game=~s",
-                [PlayerId, GameKey]),
-            {ok, true};
-        {error, not_found} ->
-            ?ERR("Failed to find player=~s for game=~s",
-                [PlayerId, GameKey]),
-            {error, player_not_found};
-        {error, Error} ->
-            ?ERR("Failed to find player=~s for game=~s: ~p",
-                [PlayerId, GameKey, Error]),
             {error, Error}
     end.
 
@@ -102,31 +69,23 @@ exists(DB, GameKey, PlayerId) ->
 %% INTERNAL FUNCTIONS
 %% ############################################################### 
 
-do_register(DB, Args) ->
-    PlayerId = proplists:get_value("player_id", Args),
-    GameKey = proplists:get_value("game_key", Args),
-    case database:save_doc(DB, build_doc(Args)) of
-        {ok, Doc} ->
-            ?DBG("Player=~s created for game=~s",
-                [PlayerId, GameKey]),
-            {ok, Doc};
-        {error, conflict} ->
-            ?ERR("Player=~s already exists for game=~s",
-                [PlayerId, GameKey]),
-            {error, player_already_exists};
-        {error, Error} ->
-            ?DBG("Failed to create player=~s for game=~s",
-                [PlayerId, GameKey]),
-            {error, Error}
-    end.
+create(DB, Player, true) ->
+    database:save_doc(DB, build_doc(Player));
+create(_, _, false) ->
+    {error, not_found};
+create(_, _, Else) ->
+    Else.
 
-build_doc(Args) ->
-    GameUUID = proplists:get_value("game_key", Args),
-    PlayerId = proplists:get_value("player_id", Args),
-    Password = proplists:get_value("password", Args),
-    PasswordHash = cryptography:sha(Password, PlayerId),
-    document:create([{"game_key", GameUUID}, {"_id", PlayerId}, 
-        {"password", PasswordHash}, {"type", "player"}]).
+field_mapping(Developer) ->
+    [{<<"developer_id">>, {<<"developer_id">>, fun(V) -> V end}}, 
+     {<<"game_key">>, {<<"game_key">>, fun(V) -> V end}},
+     {<<"player_id">>, {<<"_id">>, fun(V) -> Id = V end}},
+     {<<"password">>, <<"password">>}].
+
+build_doc(Developer) ->
+    Mapping = field_mapping(Developer),
+    Doc = document:build_doc(Developer, [], Mapping),
+    document:create([{<<"type">>, <<"player">>} | Doc]).
 
 %% ###############################################################
 %% 

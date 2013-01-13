@@ -7,7 +7,7 @@
 
 -module(database).
 -export([open/1, open/3, save_doc/2, save_doc/3, read_doc/2, read_doc/3,
-         delete_doc/2, delete_doc/3, exists/2, exists/3]).
+         read_doc/4, delete_doc/2, delete_doc/3, exists/2, exists/3]).
 
 %% ###############################################################
 %%
@@ -35,10 +35,19 @@ read_doc(DB, DocId) when is_list(DocId) ->
 read_doc(_, _) -> {error, wrong_id}.
 
 read_doc(DB, View, Keys) ->
+    read_doc(DB, View, Keys, true).
+
+read_doc(DB, View, Keys, Flag) ->
     Fun = fun(R, A) -> [document:read(<<"value">>, R) | A] end,
     case couchbeam_view:fold(Fun, [], DB, View, Keys) of
         {error, Reason} ->
             {error, Reason};
+        [] when Flag == true ->
+            {error, not_found};
+        [] when Flag == false ->
+            {ok, []};
+        [Row] ->
+            {ok, Row};
         Rows ->
             {ok, Rows}
     end.
@@ -64,18 +73,20 @@ delete_doc(DB, View, Keys) ->
 
 exists(DB, Id) ->
     case read_doc(DB, Id) of
-        {ok, _Doc} ->
-            {ok, true};
+        {ok, _} ->
+            true;
+        {error, not_found} ->
+            false;
         {error, Error} ->
             {error, Error}
     end.
 
 exists(DB, View, Keys) ->
     case read_doc(DB, View, Keys) of
-        {ok, [_Doc]} ->
-            {ok, true};
-        {ok, []} ->
-            {error, not_found};
+        {ok, _} ->
+            true;
+        {error, not_found} ->
+            false;
         {error, Error} ->
             {error, Error}
     end.

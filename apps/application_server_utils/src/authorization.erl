@@ -6,31 +6,15 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(authorization).
--export([authorize/3, authorize/4]).
+-export([authorize/3]).
 
 %% ###############################################################
 %%
 %% ###############################################################
 
-authorize(player, Doc, Args) ->
+authorize(Doc, Id, Password) ->
     Password1 = document:read(<<"password">>, Doc),
-    Password2 = proplists:get_value("password", Args),
-    PlayerId = proplists:get_value("player_uuid", Args),
-    auth(Password1, cryptography:sha(Password2, PlayerId));
-
-authorize(developer, Doc, Args) ->
-    Password1 = document:read(<<"password">>, Doc),
-    Password2 = proplists:get_value("password", Args),
-    DeveloperId = proplists:get_value("developer_id", Args),
-    auth(Password1, cryptography:sha(Password2, DeveloperId)).
-
-authorize(player, Doc, PlayerUUID, Password) ->
-    Password1 = document:read(<<"password">>, Doc),
-    auth(Password1, cryptography:sha(Password, PlayerUUID));
-
-authorize(developer, Doc, DevId, DevPass) ->
-    Password1 = document:read(<<"password">>, Doc),
-    auth(Password1, cryptography:sha(DevPass, DevId)).
+    auth(Password1, cryptography:sha(Password, Id)).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
@@ -41,8 +25,8 @@ auth(P1, P2) when is_list(P1) ->
 auth(P1, P2) when is_list(P2) ->
     auth(P1, list_to_binary(P2));
 
-auth(P, P) -> {ok, true};
-auth(_, _) -> {error, unauthorized}.
+auth(P, P) -> true;
+auth(_, _) -> false.
 
 %% ###############################################################
 %% ###############################################################
