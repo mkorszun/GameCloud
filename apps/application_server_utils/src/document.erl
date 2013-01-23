@@ -6,11 +6,11 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([create/1, build_doc/3, read/2, read/3, get_id/1, delete/2, set_value/3, rename/2]).
+-export([create/1, build_doc/3, read/2, read/3, get_id/1, delete/2, set_value/3, rename/2, update_doc/3]).
 
 %% ###############################################################
 %%
-%% ############################################################### 
+%% ###############################################################
 
 create(Doc) when is_list(Doc) -> doc(Doc);
 create({L} = Doc) when is_list(L) -> Doc.
@@ -31,7 +31,7 @@ read(Key, Doc, Default) when is_binary(Key) ->
     couchbeam_doc:get_value(Key, Doc, Default).
 
 get_id(Doc) ->
-    couchbeam_doc:get_id(Doc).    
+    couchbeam_doc:get_id(Doc).
 
 delete(Doc, []) ->
     Doc;
@@ -50,9 +50,25 @@ rename(Doc, [{Old, New} | T]) ->
     Doc1 = delete(Doc, [Old]),
     rename(set_value(New, Val, Doc1), T).
 
+update_doc(OldDoc, NewDoc, Mapping) ->
+    io:format("~n~p~n", [NewDoc]),
+    lists:foldl(
+            fun({K,V}, D) ->
+                    io:format("~n~p~n", [K]),
+                case proplists:get_value(K, Mapping) of
+                    {KK, F} ->
+                        document:set_value(KK, F(V), D);
+                    undefined ->
+                        D
+                end
+            end,
+            OldDoc,
+            NewDoc
+        ).
+
 %% ###############################################################
 %% INTERNAL FUNCTIONS
-%% ############################################################### 
+%% ###############################################################
 
 doc(Doc) -> doc(Doc, []).
 
@@ -69,4 +85,4 @@ val(Val) when is_list(Val) -> list_to_binary(Val).
 
 %% ###############################################################
 %% ###############################################################
-%% ############################################################### 
+%% ###############################################################

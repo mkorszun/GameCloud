@@ -1,4 +1,4 @@
-%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @author Mateusz Korszun <mkorszun@gmail.com>
 %%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% Database connection
