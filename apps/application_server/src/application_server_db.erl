@@ -11,9 +11,17 @@
 
 -define(APP, application_server).
 
+%% ###############################################################
+%% DATABASE CONNECTION
+%% ###############################################################
+
 connection() ->
     {ok, Name} = application:get_env(?APP, couchdb_db),
     {ok, Address} = application:get_env(?APP, couchdb_addr),
     {ok, Port} = application:get_env(?APP, couchdb_port),
     {ok, DB} = database:open(Name, inet_parse:ntoa(Address), Port),
     DB.
+
+%% ###############################################################
+%% ###############################################################
+%% ###############################################################

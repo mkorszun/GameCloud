@@ -1,4 +1,4 @@
-%%% @author Mateusz Korszun <mkorszun@gmail.com> 
+%%% @author Mateusz Korszun <mkorszun@gmail.com>
 %%% @copyright (C) 2012, GameCloud
 %%% @doc
 %%% API server
@@ -17,7 +17,7 @@ start_link() ->
     ensure_started(inets),
     ensure_started(crypto),
     ensure_started(mochiweb),
-    application:set_env(webmachine, webmachine_logger_module, 
+    application:set_env(webmachine, webmachine_logger_module,
                         webmachine_logger),
     ensure_started(webmachine),
     game_cloud_api_sup:start_link().
@@ -26,7 +26,7 @@ start() ->
     ensure_started(inets),
     ensure_started(crypto),
     ensure_started(mochiweb),
-    application:set_env(webmachine, webmachine_logger_module, 
+    application:set_env(webmachine, webmachine_logger_module,
                         webmachine_logger),
     ensure_started(webmachine),
     application:start(game_cloud_api).
@@ -52,5 +52,5 @@ ensure_started(App) ->
     end.
 
 %% ###############################################################
-%%
+%% ###############################################################
 %% ###############################################################

@@ -2,12 +2,18 @@
    "_id": "_design/games",
    "views": {
        "read": {
-           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], {key:doc._id, name:doc.name, description:doc.description, game_link:doc.game_link, platform:doc.platform, market_link:doc.market_link}) }"
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], {key:doc._id, name:doc.name, description:doc.description, game_link:doc.game_link, platform:doc.platform, market_link:doc.market_link, screen:{name:doc.screen.name, content_type:doc.screen.content_type}}) }"
+       },
+       "read_screen": {
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id, doc.screen.name], doc.screen) }"
        },
        "list": {
            "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id], {key:doc._id, name:doc.name, description:doc.description, game_link:doc.game_link, platform:doc.platform, market_link:doc.market_link}) }"
        },
        "delete": {
+           "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], doc) }"
+       },
+       "update": {
            "map": "function(doc) { if (doc.type == 'game')  emit([doc.developer_id, doc._id], doc) }"
        }
    }

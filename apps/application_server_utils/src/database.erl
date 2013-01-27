@@ -10,7 +10,7 @@
          read_doc/4, delete_doc/2, delete_doc/3, exists/2, exists/3]).
 
 %% ###############################################################
-%% Open DB connection
+%% OPEN DB CONNECTION
 %% ###############################################################
 
 open(DBName) ->
@@ -22,7 +22,7 @@ open(DBName, Host, Port) ->
     couchbeam:open_db(Conn, DBName).
 
 %% ###############################################################
-%% Save document
+%% SAVE DOCUMENT
 %% ###############################################################
 
 save_doc(DB, Doc) ->
@@ -33,7 +33,7 @@ save_doc(DB, Doc, Attachments) ->
     couchbeam:save_doc(DB, Doc1).
 
 %% ###############################################################
-%% Read document
+%% READ DOCUMENT
 %% ###############################################################
 
 read_doc(DB, DocId) when is_binary(DocId) ->
@@ -61,7 +61,7 @@ read_doc(DB, View, Keys, Flag) ->
     end.
 
 %% ###############################################################
-%% Delete document
+%% DELETE DOCUMENT
 %% ###############################################################
 
 delete_doc(DB, Id) ->
@@ -84,7 +84,7 @@ delete_doc(DB, View, Keys) ->
     end.
 
 %% ###############################################################
-%% Check document existence
+%% CHECK DOCUMENT EXISTANCE
 %% ###############################################################
 
 exists(DB, Id) ->

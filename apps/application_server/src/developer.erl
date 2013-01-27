@@ -125,12 +125,12 @@ field_mapping(update, Developer) ->
 build_doc(Developer) ->
     Mapping = field_mapping(create, Developer),
     Doc = document:build_doc(Developer, [], Mapping),
-    document:create([{<<"type">>, <<"developer">>} | Doc]).
+    {[{<<"type">>, <<"developer">>} | Doc]}.
 
 update_doc(Developer, Fields) ->
     Mapping = field_mapping(update, Fields),
     document:update_doc(Developer, Fields, Mapping).
 
 %% ###############################################################
-%%
+%% ###############################################################
 %% ###############################################################

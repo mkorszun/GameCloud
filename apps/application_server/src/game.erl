@@ -102,24 +102,32 @@ field_mapping(create, _Game) ->
      {<<"description">>, {<<"description">>, fun(V) -> V end}},
      {<<"platform">>, {<<"platform">>, fun(V) -> V end}},
      {<<"game_link">>, {<<"game_link">>, fun(V) -> V end}},
-     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}}];
+     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}},
+     {<<"screen">>, {<<"screen">>, fun({struct, V}) ->
+        {[{<<"name">>, proplists:get_value(<<"name">>, V)},
+        {<<"content_type">>, proplists:get_value(<<"content_type">>, V)},
+        {<<"content">>, proplists:get_value(<<"content">>, V)}]} end}}];
 
 field_mapping(update, _Game) ->
     [{<<"name">>, {<<"name">>, fun(V) -> V end}},
      {<<"description">>, {<<"description">>, fun(V) -> V end}},
      {<<"platform">>, {<<"platform">>, fun(V) -> V end}},
      {<<"game_link">>, {<<"game_link">>, fun(V) -> V end}},
-     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}}].
+     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}},
+     {<<"screen">>, {<<"screen">>, fun({struct, V}) ->
+        {[{<<"name">>, proplists:get_value(<<"name">>, V)},
+        {<<"content_type">>, proplists:get_value(<<"content_type">>, V)},
+        {<<"content">>, proplists:get_value(<<"content">>, V)}]} end}}].
 
 build_doc(Game) ->
     Mapping = field_mapping(create, Game),
     Doc = document:build_doc(Game, [], Mapping),
-    document:create([{<<"type">>, <<"game">>} | Doc]).
+    {[{<<"type">>, <<"game">>} | Doc]}.
 
 update_doc(Game, Fields) ->
     Mapping = field_mapping(update, Fields),
     document:update_doc(Game, Fields, Mapping).
 
 %% ###############################################################
-%%
+%% ###############################################################
 %% ###############################################################

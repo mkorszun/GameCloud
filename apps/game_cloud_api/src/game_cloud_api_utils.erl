@@ -9,7 +9,7 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([get_request_body/3, is_authorized/3]).
+-export([get_request_body/3, is_authorized/3, build_page/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -18,7 +18,7 @@
 -include("logger.hrl").
 
 %% ###############################################################
-%%
+%% UTILS
 %% ###############################################################
 
 get_request_body(ReqData, State, Key) ->
@@ -53,9 +53,25 @@ is_authorized(developer, ReqData, Context) ->
         end
     ).
 
+build_page(DeveloperId, Games) ->
+    List = lists:map(fun({Game}) -> build_link(DeveloperId, Game) end, Games),
+    io_lib:format("<html><body><ul>~s</ul></body></html>", [List]).
+
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
+
+build_link(DeveloperId, Game) ->
+    {ok, Host} = application:get_env(game_cloud_api, server_addr),
+    {ok, Port} = application:get_env(game_cloud_api, server_port),
+    GameKey = proplists:get_value(<<"key">>, Game),
+    MarketLink = proplists:get_value(<<"market_link">>, Game),
+    {Screen} = proplists:get_value(<<"screen">>, Game),
+    ScreenName = proplists:get_value(<<"name">>, Screen),
+    ImageLink = io_lib:format("http://~s:~p/developer/~s/game/~s/screen/~s",
+        [inet_parse:ntoa(Host), Port, DeveloperId, GameKey, ScreenName]),
+    io_lib:format("<li><a href=\"?argument=~s\"><img src=\"~s\"/></a></li>",
+        [MarketLink, ImageLink]).
 
 authorize(ReqData, Context, Fun) ->
     case wrq:get_req_header("authorization", ReqData) of
@@ -72,5 +88,5 @@ authorize(ReqData, Context, Fun) ->
     end.
 
 %% ###############################################################
-%%
+%% ###############################################################
 %% ###############################################################
