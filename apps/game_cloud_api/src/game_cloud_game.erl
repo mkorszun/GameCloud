@@ -76,7 +76,7 @@ to_json(ReqData, State) ->
                 [GameId, DeveloperId]),
             {{halt, 404}, ReqData, State};
         {error, Error} ->
-            ?ERR("Failed to read game id=~s for developer id=~s: ~s",
+            ?ERR("Failed to read game id=~s for developer id=~s: ~p",
                 [GameId, DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.
@@ -93,7 +93,7 @@ delete_resource(ReqData, State) ->
                 [GameId, DeveloperId]),
             {{halt, 404}, ReqData, State};
         {error, Error} ->
-            ?ERR("Failed to read game id=~s for developer id=~s: ~s",
+            ?ERR("Failed to read game id=~s for developer id=~s: ~p",
                 [GameId, DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.

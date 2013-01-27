@@ -42,8 +42,12 @@ provide_content(ReqData, State) ->
             NewReqData = wrq:set_resp_header("content-type", Type, ReqData),
             {base64:decode(Content), NewReqData, State};
         {error, not_found} ->
+            ?ERR("Failed to read game screen for developer id=~s
+                and game=~s: not_found", [DeveloperId, GameId]),
             {{halt, 404}, ReqData, State};
-        {error, _Error} ->
+        {error, Error} ->
+            ?ERR("Failed to read game screen for developer id=~s
+                and game=~s: ~p", [DeveloperId, GameId, Error]),
             {{halt, 500}, ReqData, State}
     end.
 

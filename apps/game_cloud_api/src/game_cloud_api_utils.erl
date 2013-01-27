@@ -46,7 +46,7 @@ is_authorized(developer, ReqData, Context) ->
                         [User]),
                     {{halt, 404}, Data, Ctx};
                 {error, Error} ->
-                    ?ERR("Failed to authorize developer id=~s: ~s",
+                    ?ERR("Failed to authorize developer id=~s: ~p",
                         [User, Error]),
                     {{halt, 500}, Data, Ctx}
             end

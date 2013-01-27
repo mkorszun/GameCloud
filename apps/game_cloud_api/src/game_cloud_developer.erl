@@ -51,7 +51,7 @@ process_post(ReqData, State) ->
                         [DeveloperId]),
                     {{halt, 404}, ReqData, State};
                 {error, Error} ->
-                    ?ERR("Failed to update developer id=~s: ~s",
+                    ?ERR("Failed to update developer id=~s: ~p",
                         [DeveloperId, Error]),
                     {{halt, 500}, ReqData, State}
             end
@@ -74,7 +74,7 @@ to_json(ReqData, State) ->
                 [DeveloperId]),
             {{halt, 404}, ReqData, State};
         {error, Error} ->
-            ?ERR("Failed to read developer id=~s: ~s",
+            ?ERR("Failed to read developer id=~s: ~p",
                 [DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.
@@ -90,7 +90,7 @@ delete_resource(ReqData, State) ->
                 [DeveloperId]),
             {{halt, 404}, ReqData, State};
         {error, Error} ->
-            ?ERR("Failed to delete developer id=~s: ~s",
+            ?ERR("Failed to delete developer id=~s: ~p",
                 [DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.
