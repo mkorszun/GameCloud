@@ -6,20 +6,42 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([build_doc/3, read/2, read/3, get_id/1, delete/2, set_value/3, update_doc/3]).
+-export([create/3, update/3, read/2, read/3, get_id/1, delete/2, set_value/3]).
 
 %% ###############################################################
 %%
 %% ###############################################################
 
 %% ###############################################################
-%% BUILD DOCUMENT
+%% CREATE DOCUMENT
 %% ###############################################################
 
-build_doc([], Doc, _) -> Doc;
-build_doc([{K, V} |T], Doc, Mapping) ->
-    {Key, Format} = proplists:get_value(K, Mapping),
-    build_doc(T, [{Key, Format(V)} | Doc], Mapping).
+create(_, Doc, []) -> Doc;
+create(Data, Doc, [{K1, {K2, Format}} | T]) ->
+    case proplists:get_value(K1, Data) of
+        undefined ->
+            throw(missing_element);
+        V ->
+            create(Data, [{K2, Format(V)} | Doc], T)
+    end.
+
+%% ###############################################################
+%% UPDATE DOCUMENT
+%% ###############################################################
+
+update(OldDoc, NewDoc, Mapping) ->
+    lists:foldl(
+            fun({K1, {K2, F}}, D) ->
+                case proplists:get_value(K1, NewDoc) of
+                    undefined ->
+                        D;
+                    V ->
+                        document:set_value(K2, F(V), D)
+                end
+            end,
+            OldDoc,
+            Mapping
+        ).
 
 %% ###############################################################
 %% READ ELEMENT
@@ -59,24 +81,6 @@ set_value(Key, Value, Doc) when is_list(Value) ->
     set_value(Key, list_to_binary(Value), Doc);
 set_value(Key, Value, Doc) ->
     couchbeam_doc:set_value(Key, Value, Doc).
-
-%% ###############################################################
-%% UPDATE DOCUMENT
-%% ###############################################################
-
-update_doc(OldDoc, NewDoc, Mapping) ->
-    lists:foldl(
-            fun({K,V}, D) ->
-                case proplists:get_value(K, Mapping) of
-                    {KK, F} ->
-                        document:set_value(KK, F(V), D);
-                    undefined ->
-                        D
-                end
-            end,
-            OldDoc,
-            NewDoc
-        ).
 
 %% ###############################################################
 %% ###############################################################

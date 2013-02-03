@@ -35,7 +35,7 @@ provide_content(ReqData, State) ->
     DeveloperId = dict:fetch(developer, Data),
     GameId = dict:fetch(game, Data),
     FileName = dict:fetch(screen, Data),
-    case game_screen:read(DeveloperId, GameId, FileName) of
+    case game:read_screen(DeveloperId, GameId, FileName) of
         {ok, Doc} ->
             Type = binary_to_list(document:read(<<"content_type">>, Doc)),
             Content = document:read(<<"content">>, Doc),

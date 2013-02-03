@@ -35,8 +35,9 @@ auth(P, P) -> true;
 auth(_, _) -> false.
 
 bin_to_hexstr(Bin) ->
-  lists:flatten([io_lib:format("~2.16.0B", [X]) ||
-    X <- binary_to_list(Bin)]).
+    list_to_binary(lists:flatten(
+        [io_lib:format("~2.16.0B", [X]) ||
+            X <- binary_to_list(Bin)])).
 
 %% ###############################################################
 %% ###############################################################

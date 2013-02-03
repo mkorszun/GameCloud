@@ -9,6 +9,7 @@
 
 -export([create/1, create/2]).
 -export([read/2, read/3]).
+-export([read_screen/3, read_screen/4]).
 -export([update/3, update/4]).
 -export([delete/2, delete/3]).
 -export([exists/2, exists/3]).
@@ -45,6 +46,14 @@ read(DB, DeveloperId, GameKey) ->
     Keys = {key, views:keys([DeveloperId, GameKey])},
     database:read_doc(DB, View, [Keys]).
 
+read_screen(DeveloperId, GameKey, ScreenName) ->
+    read_screen(application_server_db:connection(), DeveloperId, GameKey, ScreenName).
+
+read_screen(DB, DeveloperId, GameKey, ScreenName) ->
+    View = {<<"games">>, <<"read_screen">>},
+    Keys = {key, views:keys([DeveloperId, GameKey, ScreenName])},
+    database:read_doc(DB, View, [Keys]).
+
 %% ###############################################################
 %% UPDATE
 %% ###############################################################
@@ -58,6 +67,8 @@ update(DB, DeveloperId, GameKey, NewData) ->
     case database:read_doc(DB, View, [Keys]) of
         {ok, Doc} ->
             try update_doc(Doc, NewData) of
+                NewDoc when NewDoc =:= Doc  ->
+                    {ok, Doc};
                 NewDoc ->
                     database:save_doc(DB, NewDoc)
             catch
@@ -121,12 +132,12 @@ field_mapping(update, _Game) ->
 
 build_doc(Game) ->
     Mapping = field_mapping(create, Game),
-    Doc = document:build_doc(Game, [], Mapping),
+    Doc = document:create(Game, [], Mapping),
     {[{<<"type">>, <<"game">>} | Doc]}.
 
 update_doc(Game, Fields) ->
     Mapping = field_mapping(update, Fields),
-    document:update_doc(Game, Fields, Mapping).
+    document:update(Game, Fields, Mapping).
 
 %% ###############################################################
 %% ###############################################################

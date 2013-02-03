@@ -20,7 +20,9 @@ clean:
 	find . -name "#*#" -exec rm {} \;
 
 release:
-	rm -rf deps/yaws/rel
 	make clean
 	make
-	./rebar generate overlay_vars=${NODE}.config
+	./rebar generate overlay_vars=${NODE}.config  
+
+test:
+	ct_run -pa apps/*/ebin -pa deps/*/ebin -dir apps/*/test/ -logdir tests 
