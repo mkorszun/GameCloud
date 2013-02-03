@@ -41,6 +41,7 @@ create(DB, Developer) ->
 %% ###############################################################
 
 read(Id) ->
+    io:format("Developer read"),
     read(application_server_db:connection(), Id).
 
 read(DB, Id) ->
@@ -116,14 +117,12 @@ list_games(DB, Id) ->
 
 field_mapping(create, Developer) ->
     [{<<"id">>, {<<"_id">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-    {<<"email">>, {<<"email">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-    {<<"password">>, {<<"password">>, fun(V) when is_binary(V) ->
-        Id = proplists:get_value(<<"id">>, Developer),
-        authorization:sha(V, Id); (_) -> throw(bad_format) end}}];
+        (_) -> throw(bad_format) end}} | field_mapping(Developer)];
 
 field_mapping(update, Developer) ->
+    field_mapping(Developer).
+
+field_mapping(Developer) ->
     [{<<"email">>, {<<"email">>, fun(V) when is_binary(V) -> V;
         (_) -> throw(bad_format) end}},
     {<<"password">>, {<<"password">>, fun(V) when is_binary(V) -> Id =

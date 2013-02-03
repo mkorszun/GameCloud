@@ -187,7 +187,6 @@ test_developer_update(_Config) ->
 test_developer_update_no_change1(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_) -> {ok, ?DOC} end),
-    meck:expect(database, save_doc, fun(_,_) -> {ok, doc} end),
     {ok, ?DOC} = developer:update([], <<"id">>, [{<<"email">>, <<"a@b">>}]),
     [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}}] = meck:history(database),
     meck:validate(database),
@@ -196,7 +195,6 @@ test_developer_update_no_change1(_Config) ->
 test_developer_update_no_change2(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_) -> {ok, ?DOC} end),
-    meck:expect(database, save_doc, fun(_,_) -> {ok, doc} end),
     {ok, ?DOC} = developer:update([], <<"id">>, [{<<"a">>, <<"b">>}]),
     [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}}] = meck:history(database),
     meck:validate(database),

@@ -12,7 +12,6 @@
 -export([read_screen/3, read_screen/4]).
 -export([update/3, update/4]).
 -export([delete/2, delete/3]).
--export([exists/2, exists/3]).
 
 %% ###############################################################
 %% API
@@ -25,6 +24,8 @@
 create(Game) ->
     create(application_server_db:connection(), Game).
 
+create(_, []) ->
+    {error, {bad_data, empty_doc}};
 create(DB, Game) ->
     try build_doc(Game) of
         Document ->
@@ -61,6 +62,8 @@ read_screen(DB, DeveloperId, GameKey, ScreenName) ->
 update(DeveloperId, GameKey, NewData) ->
     update(application_server_db:connection(), DeveloperId, GameKey, NewData).
 
+update(_, _, _, []) ->
+    {error, {bad_data, empty_doc}};
 update(DB, DeveloperId, GameKey, NewData) ->
     View = {<<"games">>, <<"update">>},
     Keys = {key, views:keys([DeveloperId, GameKey])},
@@ -92,43 +95,41 @@ delete(DB, DeveloperId, GameKey) ->
     database:delete_doc(DB, View, [Keys]).
 
 %% ###############################################################
-%% EXISTS
-%% ###############################################################
-
-exists(DeveloperId, GameKey) ->
-    exists(application_server_db:connection(), DeveloperId, GameKey).
-
-exists(DB, DeveloperId, GameKey) ->
-    View = {<<"games">>, <<"read">>},
-    Keys = {key, views:keys([DeveloperId, GameKey])},
-    database:exists(DB, View, [Keys]).
-
-%% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
-field_mapping(create, _Game) ->
-    [{<<"developer_id">>, {<<"developer_id">>, fun(V) -> V end}},
-     {<<"name">>, {<<"name">>, fun(V) -> V end}},
-     {<<"description">>, {<<"description">>, fun(V) -> V end}},
-     {<<"platform">>, {<<"platform">>, fun(V) -> V end}},
-     {<<"game_link">>, {<<"game_link">>, fun(V) -> V end}},
-     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}},
-     {<<"screen">>, {<<"screen">>, fun({struct, V}) ->
-        {[{<<"name">>, proplists:get_value(<<"name">>, V)},
-        {<<"content_type">>, proplists:get_value(<<"content_type">>, V)},
-        {<<"content">>, proplists:get_value(<<"content">>, V)}]} end}}];
+field_mapping(create, Game) ->
+    [{<<"developer_id">>, {<<"developer_id">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}} | field_mapping(Game)];
 
-field_mapping(update, _Game) ->
-    [{<<"name">>, {<<"name">>, fun(V) -> V end}},
-     {<<"description">>, {<<"description">>, fun(V) -> V end}},
-     {<<"platform">>, {<<"platform">>, fun(V) -> V end}},
-     {<<"game_link">>, {<<"game_link">>, fun(V) -> V end}},
-     {<<"market_link">>, {<<"market_link">>, fun(V) -> V end}},
-     {<<"screen">>, {<<"screen">>, fun({struct, V}) ->
-        {[{<<"name">>, proplists:get_value(<<"name">>, V)},
-        {<<"content_type">>, proplists:get_value(<<"content_type">>, V)},
-        {<<"content">>, proplists:get_value(<<"content">>, V)}]} end}}].
+field_mapping(update, Game) ->
+    field_mapping(Game).
+
+field_mapping(_Game) ->
+    [{<<"name">>, {<<"name">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}},
+     {<<"description">>, {<<"description">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}},
+     {<<"platform">>, {<<"platform">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}},
+     {<<"game_link">>, {<<"game_link">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}},
+     {<<"market_link">>, {<<"market_link">>, fun(V) when is_binary(V) -> V;
+        (_) -> throw(bad_format) end}},
+     {<<"screen">>, {<<"screen">>, fun({struct, V}) when is_list(V) ->
+            {[{<<"name">>, case proplists:get_value(<<"name">>, V) of
+                undefined -> undefined;
+                E when is_binary(E) -> E;
+                _ -> throw(bad_format) end},
+            {<<"content_type">>, case proplists:get_value(<<"content_type">>, V) of
+                undefined -> undefined;
+                E when is_binary(E) -> E;
+                _ -> throw(bad_format) end},
+            {<<"content">>, case proplists:get_value(<<"content">>, V) of
+                E when is_binary(E) -> E;
+                _ -> throw(bad_format) end}]
+            };
+        (_) -> throw(bad_format) end}}].
 
 build_doc(Game) ->
     Mapping = field_mapping(create, Game),
