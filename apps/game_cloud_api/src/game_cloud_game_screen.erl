@@ -1,3 +1,10 @@
+%%% @author Mateusz Korszun <mkorszun@gmail.com>
+%%% @copyright (C) 2012, GameCloud
+%%% @doc
+%%% Game screen resource
+%%% @end
+%%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
+
 -module(game_cloud_game_screen).
 
 -compile([{parse_transform, lager_transform}]).
@@ -30,11 +37,15 @@ content_types_provided(ReqData, State) ->
 %% RESOURCE
 %% ###############################################################
 
+%% ###############################################################
+%% READ
+%% ###############################################################
+
 provide_content(ReqData, State) ->
-    Data = wrq:path_info(ReqData),
-    DeveloperId = dict:fetch(developer, Data),
-    GameId = dict:fetch(game, Data),
-    FileName = dict:fetch(screen, Data),
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
+    GameId = dict:fetch(game, Path),
+    FileName = dict:fetch(screen, Path),
     case game:read_screen(DeveloperId, GameId, FileName) of
         {ok, Doc} ->
             Type = binary_to_list(document:read(<<"content_type">>, Doc)),
@@ -42,12 +53,12 @@ provide_content(ReqData, State) ->
             NewReqData = wrq:set_resp_header("content-type", Type, ReqData),
             {base64:decode(Content), NewReqData, State};
         {error, not_found} ->
-            ?ERR("Failed to read game screen for developer id=~s
-                and game=~s: not_found", [DeveloperId, GameId]),
+            ?ERR("Failed to read game screen=~s for developer id=~s" ++
+                " and game=~s: not_found", [FileName, DeveloperId, GameId]),
             {{halt, 404}, ReqData, State};
         {error, Error} ->
-            ?ERR("Failed to read game screen for developer id=~s
-                and game=~s: ~p", [DeveloperId, GameId, Error]),
+            ?ERR("Failed to read game screen=~s for developer id=~s" ++
+                " and game=~s: ~p", [FileName, DeveloperId, GameId, Error]),
             {{halt, 500}, ReqData, State}
     end.
 

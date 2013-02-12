@@ -10,7 +10,7 @@
 -compile([{parse_transform, lager_transform}]).
 
 -export([init/1, allowed_methods/2, content_types_provided/2, content_types_accepted/2]).
--export([process_post/2, to_json/2, delete_resource/2, forbidden/2, is_authorized/2]).
+-export([to_json/2, from_json/2, delete_resource/2, forbidden/2, is_authorized/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -23,50 +23,30 @@
 %% CONTROL
 %% ###############################################################
 
-init([]) -> {ok, []}.
+init([]) ->
+    {ok, []}.
 
 allowed_methods(ReqData, Context) ->
-    {['GET', 'POST', 'DELETE'], ReqData, Context}.
+    {['GET', 'PUT', 'DELETE'], ReqData, Context}.
 
 content_types_provided(ReqData, Context) ->
    {[{"application/json", to_json}], ReqData, Context}.
 
 content_types_accepted(ReqData, Context) ->
-   {[{"application/json", to_json}], ReqData, Context}.
+   {[{"application/json", from_json}], ReqData, Context}.
 
 %% ###############################################################
 %% RESOURCE
 %% ###############################################################
 
-process_post(ReqData, State) ->
-    Data = wrq:path_info(ReqData),
-    DeveloperId = dict:fetch(developer, Data),
-    GameId = dict:fetch(game, Data),
-    try game_cloud_api_utils:get_request_body(ReqData, State, game) of
-        {Game, NewState} ->
-            case game:update(DeveloperId, GameId, Game) of
-                {ok, _} ->
-                    {true, ReqData, NewState};
-                {error, {bad_data, Reason}} ->
-                    ?ERR("Failed to create game for developer id=~s, bad data: ~p",
-                        [DeveloperId, Reason]),
-                    {{halt, 400}, ReqData, State};
-                {error, Error} ->
-                    ?ERR("Failed to create game for developer id=~s: ~p",
-                        [DeveloperId, Error]),
-                    {{halt, 500}, ReqData, State}
-            end
-    catch
-        _:Reason ->
-            ?ERR("Failed to create game for developer id=~s, bad data: ~p",
-                [DeveloperId, Reason]),
-            {{halt, 400}, ReqData, State}
-    end.
+%% ###############################################################
+%% READ
+%% ###############################################################
 
 to_json(ReqData, State) ->
-    Data = wrq:path_info(ReqData),
-    DeveloperId = dict:fetch(developer, Data),
-    GameId = dict:fetch(game, Data),
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
+    GameId = dict:fetch(game, Path),
     case game:read(DeveloperId, GameId) of
         {ok, Doc} ->
             Response = mochijson2:encode(Doc),
@@ -81,10 +61,43 @@ to_json(ReqData, State) ->
             {{halt, 500}, ReqData, State}
     end.
 
+%% ###############################################################
+%% UPDATE
+%% ###############################################################
+
+from_json(ReqData, State) ->
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
+    GameId = dict:fetch(game, Path),
+    try game_cloud_api_utils:request_body(ReqData) of
+        {struct, Game} ->
+            case game:update(DeveloperId, GameId, Game) of
+                {ok, _} ->
+                    {true, ReqData, State};
+                {error, {bad_data, Reason}} ->
+                    ?ERR("Failed to create game for developer id=~s, bad data: ~p." ++
+                        " Request data: ~p", [DeveloperId, Reason, Game]),
+                    {{halt, 400}, ReqData, State};
+                {error, Error} ->
+                    ?ERR("Failed to create game for developer id=~s: ~p." ++
+                        " Request data: ~p", [DeveloperId, Error, Game]),
+                    {{halt, 500}, ReqData, State}
+            end
+    catch
+        _:Reason ->
+            ?ERR("Failed to create game for developer id=~s, bad data: ~p",
+                [DeveloperId, Reason]),
+            {{halt, 400}, ReqData, State}
+    end.
+
+%% ###############################################################
+%% DELETE
+%% ###############################################################
+
 delete_resource(ReqData, State) ->
-    Data = wrq:path_info(ReqData),
-    DeveloperId = dict:fetch(developer, Data),
-    GameId = dict:fetch(game, Data),
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
+    GameId = dict:fetch(game, Path),
     case game:delete(DeveloperId, GameId) of
         {ok, _} ->
             {true, ReqData, State};
@@ -98,9 +111,13 @@ delete_resource(ReqData, State) ->
             {{halt, 500}, ReqData, State}
     end.
 
+%% ###############################################################
+%%
+%% ###############################################################
+
 forbidden(ReqData, State) ->
-    Data = wrq:path_info(ReqData),
-    DeveloperId = dict:fetch(developer, Data),
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
     User = proplists:get_value(user, State),
     {(DeveloperId == User) == false, ReqData, State}.
 

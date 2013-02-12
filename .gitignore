@@ -25,3 +25,4 @@ dialyzer.plt
 *.swp
 .project
 .settings
+tests

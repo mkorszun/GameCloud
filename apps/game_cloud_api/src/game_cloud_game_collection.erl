@@ -9,10 +9,8 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([init/1, allowed_methods/2, post_is_create/2,
-    content_types_provided/2, content_types_accepted/2]).
-
--export([to_json/2, to_html/2, create_path/2, forbidden/2, is_authorized/2]).
+-export([init/1, allowed_methods/2, content_types_provided/2, content_types_accepted/2]).
+-export([process_post/2, to_json/2, to_html/2, forbidden/2, is_authorized/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -25,13 +23,11 @@
 %% CONTROL
 %% ###############################################################
 
-init([]) -> {ok, []}.
+init([]) ->
+    {ok, []}.
 
 allowed_methods(ReqData, Context) ->
     {['POST', 'GET'], ReqData, Context}.
-
-post_is_create(ReqData, Context) ->
-    {true, ReqData, Context}.
 
 content_types_provided(ReqData, Context) ->
    {[{"application/json", to_json}, {"text/html", to_html}], ReqData, Context}.
@@ -43,13 +39,46 @@ content_types_accepted(ReqData, Context) ->
 %% RESOURCE
 %% ###############################################################
 
+%% ###############################################################
+%% CREATE
+%% ###############################################################
+
+process_post(ReqData, State) ->
+    DeveloperId = dict:fetch(developer, wrq:path_info(ReqData)),
+    try game_cloud_api_utils:request_body(ReqData) of
+        {struct, Game} ->
+            case game:create([{<<"developer_id">>, list_to_binary(DeveloperId)} | Game]) of
+                {ok, Doc} ->
+                    Id = document:get_id(Doc),
+                    Response = mochijson2:encode([{game_key, Id}]),
+                    ReqData1 = game_cloud_api_utils:set_location(Id, ReqData),
+                    {true, wrq:set_resp_body(Response, ReqData1), State};
+                {error, {bad_data, Reason}} ->
+                    ?ERR("Failed to create game for developer id=~s, bad data: ~p." ++
+                        " Request data: ~p", [DeveloperId, Reason, Game]),
+                    {{halt, 400}, ReqData, State};
+                {error, Error} ->
+                    ?ERR("Failed to create game for developer id=~s: ~p." ++
+                        " Request data: ~p", [DeveloperId, Error, Game]),
+                    {{halt, 500}, ReqData, State}
+            end
+    catch
+        _:Reason ->
+            ?ERR("Failed to create game for developer id=~s, bad data: ~p",
+                [DeveloperId, Reason]),
+            {{halt, 400}, ReqData, State}
+    end.
+
+%% ###############################################################
+%% READ
+%% ###############################################################
+
 to_json(ReqData, State) ->
     Data = wrq:path_info(ReqData),
     DeveloperId = dict:fetch(developer, Data),
     case developer:list_games(DeveloperId) of
         {ok, Games} ->
-            Response = mochijson2:encode(Games),
-            {Response, ReqData, State};
+            {mochijson2:encode(Games), ReqData, State};
         {error, Error} ->
             ?ERR("Failed to read games for developer id=~s: ~p",
                 [DeveloperId, Error]),
@@ -61,47 +90,28 @@ to_html(ReqData, State) ->
     DeveloperId = dict:fetch(developer, Data),
     case developer:list_games(DeveloperId) of
         {ok, Games} ->
-            Page = game_cloud_api_utils:build_page(DeveloperId, Games),
-            {Page, ReqData, State};
+            {game_cloud_api_utils:build_page(DeveloperId, Games), ReqData, State};
         {error, Error} ->
             ?ERR("Failed to read games for developer id=~s: ~p",
                 [DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.
 
-create_path(ReqData, State) ->
-    Id = proplists:get_value(<<"id">>, State),
-    Response = mochijson2:encode([{game_key, Id}]),
-    {binary_to_list(Id), wrq:set_resp_body(Response, ReqData), State}.
-
+%% ###############################################################
+%%
+%% ###############################################################
 
 forbidden(#wm_reqdata{method = 'GET'} = ReqData, State) ->
     {false, ReqData, State};
 forbidden(#wm_reqdata{method = 'POST'} = ReqData, State) ->
-    DeveloperId = dict:fetch(developer, wrq:path_info(ReqData)),
-    try game_cloud_api_utils:get_request_body(ReqData, State, game) of
-        {Game, NewState} ->
-            case game:create([{<<"developer_id">>, list_to_binary(DeveloperId)} | Game]) of
-                {ok, Doc} ->
-                    {false, ReqData, [{<<"id">>, document:get_id(Doc)} | NewState]};
-                {error, {bad_data, Reason}} ->
-                    ?ERR("Failed to create game for developer id=~s, bad data: ~p",
-                        [DeveloperId, Reason]),
-                    {{halt, 400}, ReqData, State};
-                {error, Error} ->
-                    ?ERR("Failed to create game for developer id=~s: ~p",
-                        [DeveloperId, Error]),
-                    {{halt, 500}, ReqData, State}
-            end
-    catch
-        _:Reason ->
-            io:format("baam"),
-            ?ERR("Failed to create game for developer id=~s, bad data: ~p",
-                [DeveloperId, Reason]),
-            {{halt, 400}, ReqData, State}
-    end.
+    Path = wrq:path_info(ReqData),
+    DeveloperId = dict:fetch(developer, Path),
+    User = proplists:get_value(user, State),
+    {(DeveloperId == User) == false, ReqData, State}.
 
-is_authorized(ReqData, State) ->
+is_authorized(#wm_reqdata{method = 'GET'} = ReqData, State) ->
+    {true, ReqData, State};
+is_authorized(#wm_reqdata{method = 'POST'} = ReqData, State) ->
     game_cloud_api_utils:is_authorized(developer, ReqData, State).
 
 %% ###############################################################

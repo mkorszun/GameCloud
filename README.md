@@ -2,64 +2,96 @@ GameCloud
 =========
 ***
 
-##RESTful API
-
 ###Resources
 
-####Developer collection - **http://54.245.119.57:8080/developer**
+Auth: Plain
 
-CREATE:
+####Developer
 
-~~~
-$ curl -H "Content-Type: application/json" -X POST -d '{"id":"dev", "email":"dev@com","password":"pass"}' 54.245.119.57:8080/developer/
-~~~
+DEVELOPER_OBJECT:
 
-####Developer - **http://54.245.119.57:8080/developer/DEV_ID**
-
-READ:
-
-~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X GET 54.245.119.57:8080/developer/dev
-
-{"id":"dev","email":"dev@com"}
+~~~json
+{
+    "id" : "STRING",
+    "email" : "STRING",
+    "password" : "STRING"
+}
 ~~~
 
-DELETE:
+#####CREATE:
 
-~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X DELETE 54.245.119.57:8080/developer/dev
-~~~
-
-####Game collection - **http://54.245.119.57:8080/developer/DEV_ID/game**
-
-CREATE:
-
-~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X POST -d '{"name":"sc2", "description":"sadasd","platform":"ios","game_link":"game_link","market_link":"market_link"}' 54.245.119.57:8080/developer/dev/game
-
-{"game_key":"e2277af1cce79ef3c334cbacb400027b"}
+~~~bash
+$ curl -H "Content-Type: application/json" -X POST -d [DEVELOPER_OBJECT] http://localhost:8080/developer
 ~~~
 
-READ:
+#####READ:
 
-~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X GET 54.245.119.57:8080/developer/dev/game
-
-[{"key":"e2277af1cce79ef3c334cbacb4000c6f","name":"sc3","description":"sadasdsss","game_link":"game_link","platform":"android","market_link":"market_link"},{"key":"e2277af1cce79ef3c334cbacb400027b","name":"sc2","description":"sadasd","game_link":"game_link","platform":"ios","market_link":"market_link"}]
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http://localhost:8080/developer/[DEVELOPER_ID]
 ~~~
 
-####Game -  **http://54.245.119.57:8080/developer/DEV_ID/game/GAME_KEY**
+#####Update:
 
-READ:
-
-~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X GET 54.245.119.57:8080/developer/dev/game/e2277af1cce79ef3c334cbacb4000c6f
-
-{"key":"e2277af1cce79ef3c334cbacb4000c6f","name":"sc3","description":"sadasdsss","game_link":"game_link","platform":"android","market_link":"market_link"}
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://localhost:8080/developer/[DEVELOPER_ID]
 ~~~
 
-DELETE:
+VALUES_TU_UPDATE - JSON object containing subset of Developer attributes excluding id.
 
+#####DELETE:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://localhost:8080/developer/[DEVELOPER_ID]
 ~~~
-$ curl -u dev:pass -H "Content-Type: application/json" -X DELETE 54.245.119.57:8080/developer/dev/game/e2277af1cce79ef3c334cbacb4000c6f
+
+####Game collection
+
+GAME_OBJECT:
+
+~~~json
+{
+    "name" : "STRING",
+    "description" : "STRING",
+    "platform" : "STRING",
+    "game_link" : "STRING",
+    "market_link" : "STRING",
+    "screen" : {
+        "name" : "STRING",
+        "content_type" : "STRING",
+        "content" : "BASE64_STRING"
+    }
+}
+~~~
+
+#####CREATE:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X POST -d [GAME_OBJECT] localhost:8080/developer/[DEVELOPER_ID]/game
+{"game_key": GAME_KEY}
+~~~
+
+#####READ:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET localhost:8080/developer/[DEVELOPER_ID]/game
+~~~
+
+#####READ ALL:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+~~~
+
+#####UPDATE:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+~~~
+
+VALUES_TU_UPDATE - JSON object containing subset of Game attributes.
+
+#####DELETE:
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
 ~~~

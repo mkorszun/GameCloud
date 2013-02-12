@@ -41,7 +41,6 @@ create(DB, Developer) ->
 %% ###############################################################
 
 read(Id) ->
-    io:format("Developer read"),
     read(application_server_db:connection(), Id).
 
 read(DB, Id) ->

@@ -9,7 +9,7 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([get_request_body/3, is_authorized/3, build_page/2]).
+-export([request_body/1, set_location/2, is_authorized/3, build_page/2]).
 
 %% ###############################################################
 %% INCLUDE
@@ -21,15 +21,20 @@
 %% UTILS
 %% ###############################################################
 
-get_request_body(ReqData, State, Key) ->
-    case proplists:get_value(Key, State) of
-        undefined ->
-            Body = wrq:req_body(ReqData),
-            {struct, Object} = mochijson2:decode(Body),
-            {Object, [{Key, Object} | State]};
-        Else ->
-            {Else, State}
-    end.
+request_body(ReqData) ->
+    mochijson2:decode(wrq:req_body(ReqData)).
+
+set_location(Id, ReqData) when is_binary(Id) ->
+    set_location(binary_to_list(Id), ReqData);
+set_location(Id, ReqData) when is_list(Id) ->
+    BaseURI = wrq:base_uri(ReqData),
+    Path = wrq:path(ReqData),
+    NewPath = case [lists:last(Path)] of
+        "/" -> Path;
+        _ -> Path ++ "/"
+    end,
+    Resource = string:join([BaseURI, NewPath, Id], ""),
+    wrq:set_resp_header("Location", Resource, ReqData).
 
 is_authorized(developer, ReqData, Context) ->
     authorize(ReqData, Context,
