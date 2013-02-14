@@ -4,7 +4,8 @@ GameCloud
 
 ###Resources
 
-Auth: Plain
+Auth: Basic
+URL: gamecloudio.com
 
 ####Developer
 
@@ -21,27 +22,27 @@ DEVELOPER_OBJECT:
 #####CREATE:
 
 ~~~bash
-$ curl -H "Content-Type: application/json" -X POST -d [DEVELOPER_OBJECT] http://localhost:8080/developer
+$ curl -H "Content-Type: application/json" -X POST -d [DEVELOPER_OBJECT] http://gamecloudio.com/developer
 ~~~
 
 #####READ:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http://localhost:8080/developer/[DEVELOPER_ID]
+$ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http://gamecloudio.com/developer/[DEVELOPER_ID]
 ~~~
 
 #####Update:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://localhost:8080/developer/[DEVELOPER_ID]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://gamecloudio.com/developer/[DEVELOPER_ID]
 ~~~
 
-VALUES_TU_UPDATE - JSON object containing subset of Developer attributes excluding id.
+VALUES_TU_UPDATE - JSON object containing subset of Developer attributes excluding id (even if specified will be ignored).
 
 #####DELETE:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://localhost:8080/developer/[DEVELOPER_ID]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://gamecloudio.com/developer/[DEVELOPER_ID]
 ~~~
 
 ####Game collection
@@ -66,26 +67,26 @@ GAME_OBJECT:
 #####CREATE:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X POST -d [GAME_OBJECT] localhost:8080/developer/[DEVELOPER_ID]/game
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X POST -d [GAME_OBJECT] http://gamecloudio.com/developer/[DEVELOPER_ID]/game
 {"game_key": GAME_KEY}
 ~~~
 
 #####READ:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET localhost:8080/developer/[DEVELOPER_ID]/game
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET http://gamecloudio.com/developer/[DEVELOPER_ID]/game
 ~~~
 
 #####READ ALL:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
 ~~~
 
 #####UPDATE:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
 ~~~
 
 VALUES_TU_UPDATE - JSON object containing subset of Game attributes.
@@ -93,5 +94,5 @@ VALUES_TU_UPDATE - JSON object containing subset of Game attributes.
 #####DELETE:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://localhost:8080/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
 ~~~
