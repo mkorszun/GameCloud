@@ -102,17 +102,30 @@ to_html(ReqData, State) ->
 %% ###############################################################
 
 forbidden(#wm_reqdata{method = 'GET'} = ReqData, State) ->
-    {false, ReqData, State};
+    case wrq:get_req_header("accept", ReqData) of
+        "text/html" -> {false, ReqData, State};
+        _ -> do_forbidden(ReqData, State)
+    end;
 forbidden(#wm_reqdata{method = 'POST'} = ReqData, State) ->
+    do_forbidden(ReqData, State).
+
+is_authorized(#wm_reqdata{method = 'GET'} = ReqData, State) ->
+    case wrq:get_req_header("accept", ReqData) of
+        "text/html" -> {true, ReqData, State};
+        _ -> game_cloud_api_utils:is_authorized(developer, ReqData, State)
+    end;
+is_authorized(#wm_reqdata{method = 'POST'} = ReqData, State) ->
+    game_cloud_api_utils:is_authorized(developer, ReqData, State).
+
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ###############################################################
+
+do_forbidden(ReqData, State) ->
     Path = wrq:path_info(ReqData),
     DeveloperId = dict:fetch(developer, Path),
     User = proplists:get_value(user, State),
     {(DeveloperId == User) == false, ReqData, State}.
-
-is_authorized(#wm_reqdata{method = 'GET'} = ReqData, State) ->
-    {true, ReqData, State};
-is_authorized(#wm_reqdata{method = 'POST'} = ReqData, State) ->
-    game_cloud_api_utils:is_authorized(developer, ReqData, State).
 
 %% ###############################################################
 %% ###############################################################
