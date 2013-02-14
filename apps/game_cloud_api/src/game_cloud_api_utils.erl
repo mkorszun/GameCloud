@@ -67,14 +67,13 @@ build_page(DeveloperId, Games) ->
 %% ###############################################################
 
 build_link(DeveloperId, Game) ->
-    {ok, Host} = application:get_env(game_cloud_api, server_addr),
-    {ok, Port} = application:get_env(game_cloud_api, server_port),
+    {ok, Root} = application:get_env(game_cloud_api, content_root),
     GameKey = proplists:get_value(<<"key">>, Game),
     MarketLink = proplists:get_value(<<"market_link">>, Game),
     {Screen} = proplists:get_value(<<"screen">>, Game),
     ScreenName = proplists:get_value(<<"name">>, Screen),
-    ImageLink = io_lib:format("http://~s:~p/developer/~s/game/~s/screen/~s",
-        [inet_parse:ntoa(Host), Port, DeveloperId, GameKey, ScreenName]),
+    ImageLink = io_lib:format("~s/developer/~s/game/~s/screen/~s",
+        [Root, DeveloperId, GameKey, ScreenName]),
     io_lib:format("<li><a href=\"?argument=~s\"><img src=\"~s\"/></a></li>",
         [MarketLink, ImageLink]).
 
