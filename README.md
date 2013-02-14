@@ -4,8 +4,8 @@ GameCloud
 
 ###Resources
 
-Auth: Basic
-URL: gamecloudio.com
+* Auth: Basic
+* URL: gamecloudio.com
 
 ####Developer
 
