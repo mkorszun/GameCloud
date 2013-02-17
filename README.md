@@ -71,13 +71,13 @@ $ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X POST 
 {"game_key": GAME_KEY}
 ~~~
 
-#####READ:
+#####READ_ALL:
 
 ~~~bash
 $ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET http://gamecloudio.com/developer/[DEVELOPER_ID]/game
 ~~~
 
-#####READ ALL:
+#####READ:
 
 ~~~bash
 $ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
