@@ -12,6 +12,7 @@
 -export([read_screen/3, read_screen/4]).
 -export([update/3, update/4]).
 -export([delete/2, delete/3]).
+-export([path/2]).
 
 %% ###############################################################
 %% API
@@ -95,41 +96,43 @@ delete(DB, DeveloperId, GameKey) ->
     database:delete_doc(DB, View, [Keys]).
 
 %% ###############################################################
+%% RESOURCE PATH BUILDER
+%% ###############################################################
+
+path(game, Game) ->
+    DeveloperId = document:read(<<"developer_id">>, Game),
+    GameKey = document:read(<<"key">>, Game),
+    lists:flatten(io_lib:format("/developer/~s/game/~s", [DeveloperId, GameKey]));
+
+path(screen, Game) ->
+    Screen = document:read(<<"screen">>, Game),
+    ScreenName = document:read(<<"name">>, Screen),
+    lists:flatten(io_lib:format("~s/screen/~s", [path(game, Game), ScreenName])).
+
+%% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
 field_mapping(create, Game) ->
-    [{<<"developer_id">>, {<<"developer_id">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}} | field_mapping(Game)];
+    [{<<"developer_id">>, {<<"developer_id">>, fun(V) -> check(developer_id, V, Game) end}},
+     {<<"name">>, {<<"name">>, fun(V) -> check(name, V, Game) end}},
+     {<<"description">>, {<<"description">>, fun(V) -> check(description, V, Game) end}},
+     {<<"platform">>, {<<"platform">>, fun(V) -> check(platform, V, Game) end}},
+     {<<"game_link">>, {<<"game_link">>, fun(V) -> check(game_link, V, Game) end}},
+     {<<"market_link">>, {<<"market_link">>, fun(V) -> check(market_link, V, Game) end}},
+     {<<"tags">>, {<<"tags">>, fun(V) -> check(tags, V, Game) end}},
+     {<<"status">>, {<<"status">>, fun(V) -> check(status, V, Game) end}},
+     {<<"screen">>, {<<"screen">>, fun(V) -> check(screen, V, Game) end}}];
 
 field_mapping(update, Game) ->
-    field_mapping(Game).
-
-field_mapping(_Game) ->
-    [{<<"name">>, {<<"name">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-     {<<"description">>, {<<"description">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-     {<<"platform">>, {<<"platform">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-     {<<"game_link">>, {<<"game_link">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-     {<<"market_link">>, {<<"market_link">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-     {<<"screen">>, {<<"screen">>, fun({struct, V}) when is_list(V) ->
-            {[{<<"name">>, case proplists:get_value(<<"name">>, V) of
-                undefined -> undefined;
-                E when is_binary(E) -> E;
-                _ -> throw(bad_format) end},
-            {<<"content_type">>, case proplists:get_value(<<"content_type">>, V) of
-                undefined -> undefined;
-                E when is_binary(E) -> E;
-                _ -> throw(bad_format) end},
-            {<<"content">>, case proplists:get_value(<<"content">>, V) of
-                E when is_binary(E) -> E;
-                _ -> throw(bad_format) end}]
-            };
-        (_) -> throw(bad_format) end}}].
+    [{<<"name">>, {<<"name">>, fun(V) -> check(name, V, Game) end}},
+     {<<"description">>, {<<"description">>, fun(V) -> check(description, V, Game) end}},
+     {<<"platform">>, {<<"platform">>, fun(V) -> check(platform, V, Game) end}},
+     {<<"game_link">>, {<<"game_link">>, fun(V) -> check(game_link, V, Game) end}},
+     {<<"market_link">>, {<<"market_link">>, fun(V) -> check(market_link, V, Game) end}},
+     {<<"tags">>, {<<"tags">>, fun(V) -> check(tags, V, Game) end}},
+     {<<"status">>, {<<"status">>, fun(V) -> check(status, V, Game) end}},
+     {<<"screen">>, {<<"screen">>, fun(V) -> check(screen, V, Game) end}}].
 
 build_doc(Game) ->
     Mapping = field_mapping(create, Game),
@@ -139,6 +142,61 @@ build_doc(Game) ->
 update_doc(Game, Fields) ->
     Mapping = field_mapping(update, Fields),
     document:update(Game, Fields, Mapping).
+
+%% ###############################################################
+%% FIELD VALIDATION
+%% ###############################################################
+
+check(developer_id, V, _) when is_binary(V) -> V;
+check(developer_id, _, _) -> throw(wrong_id_format);
+
+check(name, V, _) when is_binary(V) -> V;
+check(name, _, _) -> throw(wrong_name_format);
+
+check(description, V, _) when is_binary(V) -> V;
+check(description, _, _) -> throw(wrong_description_format);
+
+check(platform, <<"android">> = V, _) -> V;
+check(platform, <<"ios">> = V, _) -> V;
+check(platform, _, _) -> throw(wrong_platform_format);
+
+check(game_link, V, _) when is_binary(V) -> V;
+check(game_link, _, _) -> throw(wrong_game_link_format);
+
+check(market_link, V, _) when is_binary(V) -> V;
+check(market_link, _, _) -> throw(wrong_market_link_format);
+
+check(tags, [H|_] = V, _) when is_list(V), is_binary(H) -> V;
+check(tags, _, _) -> throw(wrong_tags_format);
+
+check(status, <<"new">> = V, _) -> V;
+check(status, <<"beta">> = V, _) -> V;
+check(status, <<"published">> = V, _) -> V;
+check(status, _, _) -> throw(wrong_status_format);
+
+check(screen, {struct, V}, Game) when is_list(V) ->
+    {[{<<"name">>, check([screen, name], V, Game)},
+      {<<"content_type">>, check([screen, content_type], V, Game)},
+      {<<"content">>, check([screen, content], V, Game)}]};
+check(screen, _, _) -> throw(wrong_screen_format);
+
+check([screen, name], V, _) ->
+    case proplists:get_value(<<"name">>, V) of
+        E when is_binary(E) -> E;
+        _ -> throw(wrong_screen_name_format)
+    end;
+
+check([screen, content_type], V, _) ->
+    case proplists:get_value(<<"content_type">>, V) of
+        E when is_binary(E) -> E;
+        _ -> throw(bad_format)
+    end;
+
+check([screen, content], V, _) ->
+    case proplists:get_value(<<"content">>, V) of
+        E when is_binary(E) -> E;
+        _ -> throw(bad_format)
+    end.
 
 %% ###############################################################
 %% ###############################################################

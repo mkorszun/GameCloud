@@ -76,7 +76,9 @@ process_post(ReqData, State) ->
 to_json(ReqData, State) ->
     Data = wrq:path_info(ReqData),
     DeveloperId = dict:fetch(developer, Data),
-    case developer:list_games(DeveloperId) of
+    Exclude = wrq:get_qs_value("exclude", ReqData),
+    ExcludeList = game_cloud_api_utils:decode_list(Exclude),
+    case developer:list_games(DeveloperId, ExcludeList) of
         {ok, Games} ->
             {mochijson2:encode(Games), ReqData, State};
         {error, Error} ->
@@ -88,9 +90,11 @@ to_json(ReqData, State) ->
 to_html(ReqData, State) ->
     Data = wrq:path_info(ReqData),
     DeveloperId = dict:fetch(developer, Data),
-    case developer:list_games(DeveloperId) of
+    Exclude = wrq:get_qs_value("exclude", ReqData),
+    ExcludeList = game_cloud_api_utils:decode_list(Exclude),
+    case developer:list_games(DeveloperId, ExcludeList) of
         {ok, Games} ->
-            {game_cloud_api_utils:build_page(DeveloperId, Games), ReqData, State};
+            {game_cloud_api_utils:build_page(Games), ReqData, State};
         {error, Error} ->
             ?ERR("Failed to read games for developer id=~s: ~p",
                 [DeveloperId, Error]),
@@ -112,10 +116,10 @@ forbidden(#wm_reqdata{method = 'POST'} = ReqData, State) ->
 is_authorized(#wm_reqdata{method = 'GET'} = ReqData, State) ->
     case wrq:get_req_header("accept", ReqData) of
         "text/html" -> {true, ReqData, State};
-        _ -> game_cloud_api_utils:is_authorized(developer, ReqData, State)
+        _ -> game_cloud_api_auth:is_authorized(developer, ReqData, State)
     end;
 is_authorized(#wm_reqdata{method = 'POST'} = ReqData, State) ->
-    game_cloud_api_utils:is_authorized(developer, ReqData, State).
+    game_cloud_api_auth:is_authorized(developer, ReqData, State).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS

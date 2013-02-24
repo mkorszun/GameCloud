@@ -7,15 +7,7 @@
 
 -module(game_cloud_api_utils).
 
--compile([{parse_transform, lager_transform}]).
-
--export([request_body/1, set_location/2, is_authorized/3, build_page/2]).
-
-%% ###############################################################
-%% INCLUDE
-%% ###############################################################
-
--include("logger.hrl").
+-export([request_body/1, set_location/2, build_page/1, decode_list/1]).
 
 %% ###############################################################
 %% UTILS
@@ -36,60 +28,31 @@ set_location(Id, ReqData) when is_list(Id) ->
     Resource = string:join([BaseURI, NewPath, Id], ""),
     wrq:set_resp_header("Location", Resource, ReqData).
 
-is_authorized(developer, ReqData, Context) ->
-    authorize(ReqData, Context,
-        fun(Data, Ctx, User, Pass) ->
-            case developer:authorize(User, Pass) of
-                true ->
-                    {true, Data, [{user, User}]};
-                false ->
-                    ?ERR("Developer id=~s not authorized",
-                        [User]),
-                    {"Basic realm=GameCloud", Data, Ctx};
-                {error, not_found} ->
-                    ?ERR("Failed to authorize developer id=~s: not_found",
-                        [User]),
-                    {{halt, 404}, Data, Ctx};
-                {error, Error} ->
-                    ?ERR("Failed to authorize developer id=~s: ~p",
-                        [User, Error]),
-                    {{halt, 500}, Data, Ctx}
-            end
-        end
-    ).
+build_page(Games) ->
+    List = lists:map(fun(Game) -> build_link(Game) end, Games),
+    {ok, Page} = application:get_env(game_cloud_api, page),
+    io_lib:format(Page, [List]).
 
-build_page(DeveloperId, Games) ->
-    List = lists:map(fun({Game}) -> build_link(DeveloperId, Game) end, Games),
-    io_lib:format("<html><body><ul>~s</ul></body></html>", [List]).
+decode_list(List) when is_list(List) ->
+    Left = string:left(List, 1),
+    Right = string:right(List, 1),
+    case Left == "[" andalso Right == "]" of
+        true ->
+            Elements = string:sub_string(List, 2, length(List) - 1),
+            [list_to_binary(string:strip(X)) || X <- string:tokens(Elements , ",")];
+        false ->
+            [list_to_binary(List)]
+    end;
+decode_list(_) -> [].
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
-build_link(DeveloperId, Game) ->
-    {ok, Root} = application:get_env(game_cloud_api, content_root),
-    GameKey = proplists:get_value(<<"key">>, Game),
-    MarketLink = proplists:get_value(<<"market_link">>, Game),
-    {Screen} = proplists:get_value(<<"screen">>, Game),
-    ScreenName = proplists:get_value(<<"name">>, Screen),
-    ImageLink = io_lib:format("~s/developer/~s/game/~s/screen/~s",
-        [Root, DeveloperId, GameKey, ScreenName]),
-    io_lib:format("<li><a href=\"?argument=~s\"><img src=\"~s\"/></a></li>",
-        [MarketLink, ImageLink]).
-
-authorize(ReqData, Context, Fun) ->
-    case wrq:get_req_header("authorization", ReqData) of
-        "Basic "++Base64 ->
-            Str = base64:mime_decode_to_string(Base64),
-            case string:tokens(Str, ":") of
-                [User, Pass] ->
-                    Fun(ReqData, Context, User, Pass);
-                _ ->
-                    {"Basic realm=GameCloud", ReqData, Context}
-            end;
-        _ ->
-            {"Basic realm=GameCloud", ReqData, Context}
-    end.
+build_link(Game) ->
+    MarketLink = document:read(<<"market_link">>, Game),
+    {ok, Link} = application:get_env(game_cloud_api, link),
+    io_lib:format(Link, [MarketLink, game:path(screen, Game)]).
 
 %% ###############################################################
 %% ###############################################################

@@ -80,7 +80,8 @@ authorize() -> [
 ].
 
 list_games() -> [
-    test_developer_list_games
+    test_developer_list_games,
+    test_developer_list_games_exclude
 ].
 
 %% ###############################################################
@@ -151,7 +152,7 @@ test_developer_create_empty_doc(_Config) ->
         developer:create([], []).
 
 test_developer_create_bad_format(_Config) ->
-    {error, {bad_data, bad_format}} =
+    {error, {bad_data, wrong_email_format}} =
         developer:create([], [
             {<<"id">>, <<"id1">>},
             {<<"email">>, {<<"a@b">>, <<"sad">>}},
@@ -203,7 +204,7 @@ test_developer_update_no_change2(_Config) ->
 test_developer_update_bad_format(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_) -> {ok, ?DOC} end),
-    {error, {bad_data, bad_format}} = developer:update([], <<"id">>, [{<<"email">>, {a,b}}]),
+    {error, {bad_data, wrong_email_format}} = developer:update([], <<"id">>, [{<<"email">>, {a,b}}]),
     [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}}] = meck:history(database),
     meck:validate(database),
     meck:unload(database).
@@ -262,10 +263,19 @@ test_developer_authorize_not_found(_Config) ->
 
 test_developer_list_games(_Config) ->
     meck:new(database),
-    meck:expect(database, read_doc, fun(_, _, _, _) -> {ok, doc} end),
-    {ok, doc} = developer:list_games([], <<"id">>),
+    meck:expect(database, read_doc, fun(_, _, _, _) -> {ok, [{[{<<"name">>, <<"a">>}]}]} end),
+    {ok, [{[{<<"name">>, <<"a">>}]}]} = developer:list_games([], <<"id">>, []),
     [{_, {database, read_doc, [[], {<<"games">>, <<"list">>},
-        [{key, [<<"id">>]}], false]}, {ok, doc}}] = meck:history(database),
+        [{key, [<<"id">>]}], false]}, {ok, [{[{<<"name">>, <<"a">>}]}]}}] = meck:history(database),
+    meck:validate(database),
+    meck:unload(database).
+
+test_developer_list_games_exclude(_Config) ->
+    meck:new(database),
+    meck:expect(database, read_doc, fun(_, _, _, _) -> {ok, [{[{<<"name">>, <<"a">>}]}, {[{<<"name">>, <<"b">>}]}]} end),
+    {ok, [{[{<<"name">>, <<"a">>}]}]} = developer:list_games([], <<"id">>, [<<"b">>]),
+    [{_, {database, read_doc, [[], {<<"games">>, <<"list">>},
+        [{key, [<<"id">>]}], false]}, {ok, [{[{<<"name">>, <<"a">>}]}, {[{<<"name">>, <<"b">>}]}]}}] = meck:history(database),
     meck:validate(database),
     meck:unload(database).
 

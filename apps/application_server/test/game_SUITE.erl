@@ -19,7 +19,8 @@ all() -> [
     {group, read},
     {group, read_screen},
     {group, update},
-    {group, delete}
+    {group, delete},
+    {group, path}
 ].
 
 groups() -> [
@@ -27,7 +28,8 @@ groups() -> [
     {read, [], read()},
     {read_screen, [], read_screen()},
     {update, [], update()},
-    {delete, [], delete()}
+    {delete, [], delete()},
+    {path, [], path()}
 ].
 
 %% ###############################################################
@@ -51,7 +53,8 @@ create() -> [
     test_game_create_additional_elements,
     test_game_create_missing_element,
     test_game_create_empty_doc,
-    test_game_create_bad_format
+    test_game_create_bad_format,
+    test_game_create_bad_platform
 ].
 
 read() -> [
@@ -75,6 +78,11 @@ delete() -> [
     test_game_delete
 ].
 
+path() -> [
+    test_path_game,
+    test_path_screen
+].
+
 %% ###############################################################
 %% TEST HELPERS
 %% ###############################################################
@@ -87,6 +95,25 @@ delete() -> [
         {<<"platform">>, <<"ios">>},
         {<<"game_link">>, <<"g_link">>},
         {<<"market_link">>, <<"m_link">>},
+        {<<"tags">>, [<<"one">>, <<"two">>]},
+        {<<"status">>, <<"new">>},
+        {<<"screen">>, {struct, [
+            {<<"name">>, <<"screen.jpg">>},
+            {<<"content_type">>, <<"image/jpg">>},
+            {<<"content">>, <<"kjkasdjksadjsa">>}
+        ]}}
+    ]).
+
+-define(CREATE_DATA_BAD_PLATFORM,
+    [
+        {<<"developer_id">>, <<"id1">>},
+        {<<"name">>, <<"wc3">>},
+        {<<"description">>, <<"baam">>},
+        {<<"platform">>, <<"linux">>},
+        {<<"game_link">>, <<"g_link">>},
+        {<<"market_link">>, <<"m_link">>},
+        {<<"tags">>, [<<"one">>, <<"two">>]},
+        {<<"status">>, <<"new">>},
         {<<"screen">>, {struct, [
             {<<"name">>, <<"screen.jpg">>},
             {<<"content_type">>, <<"image/jpg">>},
@@ -101,6 +128,8 @@ delete() -> [
             {<<"name">>, <<"screen.jpg">>},
             {<<"content_type">>, <<"image/jpg">>},
             {<<"content">>, <<"kjkasdjksadjsa">>}]}},
+        {<<"status">>, <<"new">>},
+        {<<"tags">>, [<<"one">>, <<"two">>]},
         {<<"market_link">>, <<"m_link">>},
         {<<"game_link">>, <<"g_link">>},
         {<<"platform">>, <<"ios">>},
@@ -116,6 +145,8 @@ delete() -> [
             {<<"name">>, <<"screen.jpg_updated">>},
             {<<"content_type">>, <<"image/jpg_updated">>},
             {<<"content">>, <<"kjkasdjksadjsa_updated">>}]}},
+        {<<"status">>, <<"new">>},
+        {<<"tags">>, [<<"one">>, <<"two">>]},
         {<<"market_link">>, <<"m_link">>},
         {<<"game_link">>, <<"g_link_updated">>},
         {<<"platform">>, <<"ios">>},
@@ -155,8 +186,12 @@ test_game_create_empty_doc(_Config) ->
         game:create([], []).
 
 test_game_create_bad_format(_Config) ->
-    {error, {bad_data, bad_format}} =
+    {error, {bad_data, wrong_id_format}} =
         game:create([], [{<<"developer_id">>, {<<"a">>, <<"b">>}}]).
+
+test_game_create_bad_platform(_Config) ->
+    {error, {bad_data, wrong_platform_format}} =
+        game:create([], ?CREATE_DATA_BAD_PLATFORM).
 
 %% ###############################################################
 %% READ
@@ -225,7 +260,7 @@ test_game_update_no_change2(_Config) ->
 test_game_update_bad_format(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_,_) -> {ok, ?DOC} end),
-    {error, {bad_data, bad_format}} = game:update([], <<"id">>, <<"key">>, [{<<"name">>, {a,b}}]),
+    {error, {bad_data, wrong_name_format}} = game:update([], <<"id">>, <<"key">>, [{<<"name">>, {a,b}}]),
     [{_, {database, read_doc, [[], {<<"games">>, <<"update">>}, [{key, [<<"id">>, <<"key">>]}]]},
         {ok, ?DOC}}] = meck:history(database),
     meck:validate(database),
@@ -256,6 +291,16 @@ test_game_delete(_Config) ->
         [{key, [<<"id">>, <<"key">>]}]]}, {ok, doc}}] = meck:history(database),
     meck:validate(database),
     meck:unload(database).
+
+%% ###############################################################
+%% BUILD PATH
+%% ###############################################################
+
+test_path_game(_Config) ->
+    "/developer/id1/game/12345" = game:path(game, document:set_value(<<"key">>, <<"12345">>, ?DOC)).
+
+test_path_screen(_Config) ->
+    "/developer/id1/game/12345/screen/screen.jpg" = game:path(screen, document:set_value(<<"key">>, <<"12345">>, ?DOC)).
 
 %% ###############################################################
 %% ###############################################################

@@ -9,7 +9,7 @@
 
 -compile([{parse_transform, lager_transform}]).
 
--export([init/1, allowed_methods/2, content_types_accepted/2]).
+-export([init/1, allowed_methods/2, known_content_type/2]).
 -export([process_post/2]).
 
 %% ###############################################################
@@ -29,8 +29,13 @@ init([]) ->
 allowed_methods(ReqData, Context) ->
     {['POST'], ReqData, Context}.
 
-content_types_accepted(ReqData, Context) ->
-   {[{"application/json", process_post}], ReqData, Context}.
+known_content_type(ReqData, Context) ->
+    case wrq:get_req_header("content-type", ReqData) of
+        "application/json" ->
+            {true, ReqData, Context};
+        _ ->
+            {false, ReqData, Context}
+    end.
 
 %% ###############################################################
 %% REQUEST

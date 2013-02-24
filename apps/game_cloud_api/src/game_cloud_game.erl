@@ -122,7 +122,7 @@ forbidden(ReqData, State) ->
     {(DeveloperId == User) == false, ReqData, State}.
 
 is_authorized(ReqData, State) ->
-    game_cloud_api_utils:is_authorized(developer, ReqData, State).
+    game_cloud_api_auth:is_authorized(developer, ReqData, State).
 
 %% ###############################################################
 %% ###############################################################

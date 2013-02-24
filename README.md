@@ -53,9 +53,11 @@ GAME_OBJECT:
 {
     "name" : "STRING",
     "description" : "STRING",
-    "platform" : "STRING",
+    "platform" : "android" | "ios",
     "game_link" : "STRING",
     "market_link" : "STRING",
+    "tags" : ["STRING", "STRING"],
+    "status" : "new" | "beta" | "published",
     "screen" : {
         "name" : "STRING",
         "content_type" : "STRING",

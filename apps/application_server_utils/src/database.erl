@@ -54,7 +54,7 @@ read_doc(DB, View, Keys, Flag) ->
             {error, not_found};
         [] when Flag == false ->
             {ok, []};
-        [Row] ->
+        [Row] when Flag == true ->
             {ok, Row};
         Rows ->
             {ok, Rows}

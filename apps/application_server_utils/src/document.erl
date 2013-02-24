@@ -6,7 +6,7 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(document).
--export([create/3, update/3, read/2, read/3, get_id/1, delete/2, set_value/3]).
+-export([create/3, update/3, read/2, read/3, get_id/1, delete/2, set_value/3, exclude/3]).
 
 %% ###############################################################
 %%
@@ -81,6 +81,26 @@ set_value(Key, Value, Doc) when is_list(Value) ->
     set_value(Key, list_to_binary(Value), Doc);
 set_value(Key, Value, Doc) ->
     couchbeam_doc:set_value(Key, Value, Doc).
+
+%% ###############################################################
+%% EXCLUDE DOCUMENTS BASED ON VALUE
+%% ###############################################################
+
+exclude(Docs, Exclude, Key) ->
+    lists:filter(fun(Doc) ->
+        N = document:read(Key, Doc),
+        case lists:any(
+            fun(M) when M =:= N ->
+                    true;
+               (_) ->
+                    false
+            end, Exclude) of
+                false ->
+                    true;
+                true ->
+                    false
+        end
+    end, Docs).
 
 %% ###############################################################
 %% ###############################################################

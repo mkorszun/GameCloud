@@ -12,7 +12,7 @@
 -export([update/2, update/3]).
 -export([delete/1, delete/2]).
 -export([authorize/2, authorize/3]).
--export([list_games/1, list_games/2]).
+-export([list_games/2, list_games/3]).
 
 %% ###############################################################
 %% API
@@ -102,31 +102,31 @@ authorize(DB, Id, Password) ->
 %% LIST GAMES
 %% ###############################################################
 
-list_games(Id) ->
-    list_games(application_server_db:connection(), Id).
+list_games(Id, Exclude) ->
+    list_games(application_server_db:connection(), Id, Exclude).
 
-list_games(DB, Id) ->
+list_games(DB, Id, Exclude) ->
     View = {<<"games">>, <<"list">>},
     Keys = {key, views:keys([Id])},
-    database:read_doc(DB, View, [Keys], false).
+    case database:read_doc(DB, View, [Keys], false) of
+        {ok, Games} ->
+            {ok, document:exclude(Games, Exclude, <<"name">>)};
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
 field_mapping(create, Developer) ->
-    [{<<"id">>, {<<"_id">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}} | field_mapping(Developer)];
+    [{<<"id">>, {<<"_id">>, fun(V) -> check(id, V, Developer) end}},
+    {<<"email">>, {<<"email">>, fun(V) -> check(email, V, Developer) end}},
+    {<<"password">>, {<<"password">>, fun(V) -> check(password, V, Developer) end}}];
 
 field_mapping(update, Developer) ->
-    field_mapping(Developer).
-
-field_mapping(Developer) ->
-    [{<<"email">>, {<<"email">>, fun(V) when is_binary(V) -> V;
-        (_) -> throw(bad_format) end}},
-    {<<"password">>, {<<"password">>, fun(V) when is_binary(V) -> Id =
-        proplists:get_value(<<"id">>, Developer),
-        authorization:sha(V, Id); (_) -> throw(bad_format) end}}].
+    [{<<"email">>, {<<"email">>, fun(V) -> check(email, V, Developer) end}},
+    {<<"password">>, {<<"password">>, fun(V) -> check(password, V, Developer) end}}].
 
 build_doc(Developer) ->
     Mapping = field_mapping(create, Developer),
@@ -138,6 +138,20 @@ update_doc(Developer, Fields) ->
     NewFields = [{<<"id">>, Id} | Fields],
     Mapping = field_mapping(update, NewFields),
     document:update(Developer, NewFields, Mapping).
+
+%% ###############################################################
+%% FIELD VALIDATION
+%% ###############################################################
+
+check(id, V, _) when is_binary(V) -> V;
+check(id, _, _) -> throw(wrong_id_format);
+
+check(email, V, _) when is_binary(V) -> V;
+check(email, _, _) -> throw(wrong_email_format);
+
+check(password, V, D) when is_binary(V) ->
+    authorization:sha(V, proplists:get_value(<<"id">>, D));
+check(password, _, _) -> throw(wrong_password_format).
 
 %% ###############################################################
 %% ###############################################################
