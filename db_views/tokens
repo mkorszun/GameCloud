@@ -1,0 +1,8 @@
+{
+   "_id": "_design/tokens",
+   "views": {
+       "read": {
+           "map": "function(doc) { if (doc.type == 'token')  emit([doc.developer_id, doc.token], doc) }"
+       }
+   }
+}

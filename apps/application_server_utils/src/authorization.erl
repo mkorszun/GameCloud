@@ -6,7 +6,14 @@
 %%% Created : 20 Jun 2012 by Mateusz Korszun <mkorszun@gmail.com>
 
 -module(authorization).
--export([authorize/3, sha/2]).
+-export([authorize/3, sha/2, token/1]).
+
+%% ###############################################################
+%% MACROS
+%% ###############################################################
+
+-define(R1, 170141183460469231731687303715884105729).
+-define(R2, 340282366920938463463374607431768211455).
 
 %% ###############################################################
 %%
@@ -21,6 +28,9 @@ sha(Data, Salt) ->
     C2 = crypto:sha_update(C1, Data),
     C3 = crypto:sha_update(C2, Salt),
     bin_to_hexstr(crypto:sha_final(C3)).
+
+token(Data) ->
+    sha(Data, integer_to_list(crypto:rand_uniform(?R1, ?R2))).
 
 %% ###############################################################
 %% INTERNAL FUNCTIONS

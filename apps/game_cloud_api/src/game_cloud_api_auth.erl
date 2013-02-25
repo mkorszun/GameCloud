@@ -39,7 +39,7 @@ is_authorized(developer, ReqData, Context, Method) ->
                 {error, not_found} ->
                     ?ERR("Failed to authorize developer id=~s: not_found",
                         [User]),
-                    {{halt, 404}, Data, Ctx};
+                    {{halt, 401}, Data, Ctx};
                 {error, Error} ->
                     ?ERR("Failed to authorize developer id=~s: ~p",
                         [User, Error]),
@@ -49,7 +49,7 @@ is_authorized(developer, ReqData, Context, Method) ->
             Path = wrq:path_info(ReqData),
             DeveloperId = dict:fetch(developer, Path),
             Token = proplists:get_value(token, Attributes),
-            case token:check_token(DeveloperId, Token) of
+            case token:validate(DeveloperId, Token) of
                 {ok, _} ->
                     {true, Data, [{user, DeveloperId} | Ctx]};
                 {error, token_expired} ->
@@ -59,7 +59,7 @@ is_authorized(developer, ReqData, Context, Method) ->
                 {error, not_found} ->
                     ?ERR("Failed to authorize developer id=~s: token missing",
                         [DeveloperId]),
-                    {false, Data, Ctx};
+                    {{halt, 401}, Data, Ctx};
                 {error, Error} ->
                     ?ERR("Failed to authorize developer id=~s: ~p",
                         [DeveloperId, Error]),

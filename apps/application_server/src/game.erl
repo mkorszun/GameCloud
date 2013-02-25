@@ -148,7 +148,7 @@ update_doc(Game, Fields) ->
 %% ###############################################################
 
 check(developer_id, V, _) when is_binary(V) -> V;
-check(developer_id, _, _) -> throw(wrong_id_format);
+check(developer_id, _, _) -> throw(wrong_developer_id_format);
 
 check(name, V, _) when is_binary(V) -> V;
 check(name, _, _) -> throw(wrong_name_format);
@@ -183,19 +183,22 @@ check(screen, _, _) -> throw(wrong_screen_format);
 check([screen, name], V, _) ->
     case proplists:get_value(<<"name">>, V) of
         E when is_binary(E) -> E;
+        undefined -> throw(missing_screen_name);
         _ -> throw(wrong_screen_name_format)
     end;
 
 check([screen, content_type], V, _) ->
     case proplists:get_value(<<"content_type">>, V) of
         E when is_binary(E) -> E;
-        _ -> throw(bad_format)
+        undefined -> throw(missing_screen_content_type);
+        _ -> throw(wrong_screen_content_type_format)
     end;
 
 check([screen, content], V, _) ->
     case proplists:get_value(<<"content">>, V) of
         E when is_binary(E) -> E;
-        _ -> throw(bad_format)
+        undefined -> throw(missing_screen_content);
+        _ -> throw(wrong_screen_content_format)
     end.
 
 %% ###############################################################

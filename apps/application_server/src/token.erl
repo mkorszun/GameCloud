@@ -7,7 +7,11 @@
 
 -module(token).
 
--export([create/1, create/2, read/3, check_token/2, check_token/3]).
+-export([create/1, create/2]).
+-export([read/2, read/3]).
+-export([validate/2, validate/3]).
+
+-define(VALIDITY, 15).
 
 %% ###############################################################
 %% API
@@ -21,52 +25,53 @@ create(DeveloperId) ->
     create(application_server_db:connection(), DeveloperId).
 
 create(DB, DeveloperId) ->
-    Timestamp = int_to_bin(dateutils:timestamp(5)),
-    Doc = {[{<<"developer_id">>, DeveloperId}, {<<"token">>, token(DeveloperId)},
-        {<<"timestamp">>, Timestamp}, {<<"type">>, <<"token">>}]},
-    database:save_doc(DB, Doc).
+    database:save_doc(DB, build_token(DeveloperId)).
+
+%% ###############################################################
+%% READ
+%% ###############################################################
+
+read(DeveloperId, Token) ->
+    read(application_server_db:connection(), DeveloperId, Token).
 
 read(DB, DeveloperId, Token) ->
     View = {<<"tokens">>, <<"read">>},
     Keys = {key, views:keys([DeveloperId, Token])},
     database:read_doc(DB, View, [Keys]).
 
-check_token(DeveloperId, Token) ->
-  check_token(application_server_db:connection(), DeveloperId, Token).
-check_token(DB, DeveloperId, Token) ->
+%% ###############################################################
+%% VALIDATE TOKEN
+%% ###############################################################
+
+validate(DeveloperId, Token) ->
+    validate(application_server_db:connection(), DeveloperId, Token).
+validate(DB, DeveloperId, Token) ->
     case read(DB, DeveloperId, Token) of
-      {ok, Doc} ->
-          case expired(document:read(<<"timestamp">>, Doc)) of
-              true ->
-                  reset_token(DB, Doc);
-              false ->
-                  {error, token_expired}
-          end;
-      {error, Error} ->
-          {error, Error}
+        {ok, Doc} ->
+            case dateutils:valid(document:read(<<"timestamp">>, Doc)) of
+                true ->
+                    reset_token(DB, Doc);
+                false ->
+                    {error, token_expired}
+            end;
+        {error, Error} ->
+            {error, Error}
     end.
 
+%% ###############################################################
+%% INTERNAL FUNCTIONS
+%% ###############################################################
+
 reset_token(DB, Doc) ->
-    Timestamp = int_to_bin(dateutils:timestamp(5)),
+    Timestamp = dateutils:timestamp_str(?VALIDITY),
     Updated = document:set_value(<<"timestamp">>, Timestamp, Doc),
     database:save_doc(DB, Updated).
 
-token(DeveloperId) ->
-    Key = list_to_binary(integer_to_list(
-        crypto:rand_uniform(170141183460469231731687303715884105729,
-                            340282366920938463463374607431768211455))),
-    authorization:sha(DeveloperId, Key).
-
-int_to_bin(I) ->
-    list_to_binary(integer_to_list(I)).
-
-bin_to_int(B) ->
-    list_to_integer(binary_to_list(B)).
-
-expired(Validity) when is_binary(Validity) ->
-    expired(bin_to_int(Validity));
-expired(Validity) ->
-    Validity > dateutils:timestamp().
+build_token(DeveloperId) ->
+    Token = authorization:token(DeveloperId),
+    Timestamp = dateutils:timestamp_str(?VALIDITY),
+    {[{<<"developer_id">>, DeveloperId}, {<<"token">>, Token},
+      {<<"timestamp">>, Timestamp}, {<<"type">>, <<"token">>}]}.
 
 %% ###############################################################
 %% ###############################################################

@@ -77,7 +77,8 @@ from_json(ReqData, State) ->
                 {error, {bad_data, Reason}} ->
                     ?ERR("Failed to create game for developer id=~s, bad data: ~p." ++
                         " Request data: ~p", [DeveloperId, Reason, Game]),
-                    {{halt, 400}, ReqData, State};
+                    Msg = game_cloud_api_errors:error(Reason),
+                    {{halt, 400}, wrq:set_resp_body(Msg, ReqData) , State};
                 {error, Error} ->
                     ?ERR("Failed to create game for developer id=~s: ~p." ++
                         " Request data: ~p", [DeveloperId, Error, Game]),

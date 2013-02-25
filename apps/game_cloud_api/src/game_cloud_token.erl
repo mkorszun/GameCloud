@@ -48,6 +48,8 @@ to_json(ReqData, State) ->
             Response = mochijson2:encode({[{token, Token}]}),
             {Response, ReqData, State};
         {error, Error} ->
+            ?ERR("Failed to create token for developer id = ~s: ~p",
+                [DeveloperId, Error]),
             {{halt, 500}, ReqData, State}
     end.
 

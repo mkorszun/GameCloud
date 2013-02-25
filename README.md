@@ -4,8 +4,23 @@ GameCloud
 
 ###Resources
 
-* Auth: Basic
+* Auth: Basic | Token based
 * URL: gamecloudio.com
+
+####Token
+
+#####Create
+
+~~~bash
+$ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http://gamecloudio.com/token
+{"token":"B33BFE9367175983107B7B34A4A86977C7C45FB4"}
+~~~
+
+Use token in Authorization header instead:
+
+~~~bash
+$ curl -H "Accept: application/json" -H "Authorization: gc_auth_token B33BFE9367175983107B7B34A4A86977C7C45FB4" -X GET localhost:8080/developer/mateusz
+~~~
 
 ####Developer
 

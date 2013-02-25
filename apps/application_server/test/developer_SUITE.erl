@@ -142,21 +142,17 @@ test_developer_create_additional_elements(_Config) ->
     meck:unload(database).
 
 test_developer_create_missing_element(_Config) ->
-    {error, {bad_data, missing_element}} =
-        developer:create([],[
-            {<<"email">>, <<"a@b">>},
-            {<<"password">>, <<"baam">>}]).
+    {error, {bad_data, missing_id}} = developer:create([],[{<<"email">>, <<"a@b">>}]),
+    {error, {bad_data, missing_email}} = developer:create([],[{<<"id">>, <<"id">>}]),
+    {error, {bad_data, missing_password}} = developer:create([],[{<<"id">>, <<"id">>}, {<<"email">>, <<"a@b">>}]).
 
 test_developer_create_empty_doc(_Config) ->
-    {error, {bad_data, empty_doc}} =
-        developer:create([], []).
+    {error, {bad_data, empty_doc}} = developer:create([], []).
 
 test_developer_create_bad_format(_Config) ->
-    {error, {bad_data, wrong_email_format}} =
-        developer:create([], [
-            {<<"id">>, <<"id1">>},
-            {<<"email">>, {<<"a@b">>, <<"sad">>}},
-            {<<"password">>, <<"baam">>}]).
+    {error, {bad_data, wrong_id_format}} = developer:create([], [{<<"id">>, a}]),
+    {error, {bad_data, wrong_email_format}} = developer:create([], [{<<"id">>, <<"i">>}, {<<"email">>, b}]),
+    {error, {bad_data, wrong_password_format}} = developer:create([], [{<<"id">>, <<"i">>}, {<<"email">>, <<"e">>}, {<<"password">>, c}]).
 
 %% ###############################################################
 %% READ
@@ -204,8 +200,10 @@ test_developer_update_no_change2(_Config) ->
 test_developer_update_bad_format(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_) -> {ok, ?DOC} end),
-    {error, {bad_data, wrong_email_format}} = developer:update([], <<"id">>, [{<<"email">>, {a,b}}]),
-    [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}}] = meck:history(database),
+    {error, {bad_data, wrong_email_format}} = developer:update([], <<"id">>, [{<<"email">>, b}]),
+    {error, {bad_data, wrong_password_format}} = developer:update([], <<"id">>, [{<<"email">>, <<"e">>}, {<<"password">>, c}]),
+    [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}},
+     {_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}}] = meck:history(database),
     meck:validate(database),
     meck:unload(database).
 

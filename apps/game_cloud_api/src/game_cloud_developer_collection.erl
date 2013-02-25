@@ -59,7 +59,8 @@ process_post(ReqData, State) ->
                 {error, {bad_data, Reason}} ->
                     ?ERR("Failed to create developer, bad data: ~p." ++
                         " Request data: ~p", [Reason, Developer]),
-                    {{halt, 400}, ReqData, State};
+                    Msg = game_cloud_api_errors:error(Reason),
+                    {{halt, 400}, wrq:set_resp_body(Msg, ReqData) , State};
                 {error, Error} ->
                     ?ERR("Failed to create developer: ~p. Request data: ~p",
                         [Error, Developer]),

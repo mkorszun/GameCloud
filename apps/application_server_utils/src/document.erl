@@ -12,6 +12,8 @@
 %%
 %% ###############################################################
 
+-define(A(L), try list_to_existing_atom(L) of A -> A catch _:_ -> list_to_atom(L) end).
+
 %% ###############################################################
 %% CREATE DOCUMENT
 %% ###############################################################
@@ -20,7 +22,7 @@ create(_, Doc, []) -> Doc;
 create(Data, Doc, [{K1, {K2, Format}} | T]) ->
     case proplists:get_value(K1, Data) of
         undefined ->
-            throw(missing_element);
+            throw(?A(lists:flatten(io_lib:format("missing_~s", [K1]))));
         V ->
             create(Data, [{K2, Format(V)} | Doc], T)
     end.
