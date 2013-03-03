@@ -15,6 +15,12 @@
 -export([list_games/2, list_games/3]).
 
 %% ###############################################################
+%% INCLUDE
+%% ###############################################################
+
+-include("data_model.hrl").
+
+%% ###############################################################
 %% API
 %% ###############################################################
 
@@ -25,12 +31,10 @@
 create(Developer) ->
     create(application_server_db:connection(), Developer).
 
-create(_, []) ->
-    {error, {bad_data, empty_doc}};
 create(DB, Developer) ->
-    try build_doc(Developer) of
-        Document ->
-            database:save_doc(DB, Document)
+    try check(?DEVELOPER_SCHEMA, Developer) of
+        {ok, Developer} ->
+            database:save_doc(DB, build_doc(Developer))
     catch
         _:Error ->
             {error, {bad_data, Error}}
@@ -55,22 +59,18 @@ read(DB, Id) ->
 update(Id, NewData) ->
     update(application_server_db:connection(), Id, NewData).
 
-update(_, _, []) ->
-    {error, {bad_data, empty_doc}};
 update(DB, Id, NewData) ->
-    case database:read_doc(DB, Id) of
-        {ok, Doc} ->
-            try update_doc(Doc, NewData) of
-                NewDoc when NewDoc =:= Doc ->
-                    {ok, Doc};
-                NewDoc ->
-                    database:save_doc(DB, NewDoc)
-            catch
-                _:Error ->
-                    {error, {bad_data, Error}}
-            end;
-        {error, Error} ->
-            {error, Error}
+    try check(?DEVELOPER_SCHEMA, NewData) of
+        {ok, NewData} ->
+            case database:read_doc(DB, Id) of
+                {ok, Doc} ->
+                    database:save_doc(DB, update_doc(Doc, NewData));
+                {error, Error} ->
+                    {error, Error}
+            end
+    catch
+        _:Error ->
+            {error, {bad_data, Error}}
     end.
 
 %% ###############################################################
@@ -119,39 +119,32 @@ list_games(DB, Id, Exclude) ->
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
-field_mapping(create, Developer) ->
-    [{<<"id">>, {<<"_id">>, fun(V) -> check(id, V, Developer) end}},
-    {<<"email">>, {<<"email">>, fun(V) -> check(email, V, Developer) end}},
-    {<<"password">>, {<<"password">>, fun(V) -> check(password, V, Developer) end}}];
-
-field_mapping(update, Developer) ->
-    [{<<"email">>, {<<"email">>, fun(V) -> check(email, V, Developer) end}},
-    {<<"password">>, {<<"password">>, fun(V) -> check(password, V, Developer) end}}].
-
 build_doc(Developer) ->
-    Mapping = field_mapping(create, Developer),
-    Doc = document:create(Developer, [], Mapping),
-    {[{<<"type">>, <<"developer">>} | Doc]}.
+    Trans = transform(create, Developer),
+    document:build_doc(mochijson2, Trans).
 
-update_doc(Developer, Fields) ->
-    Id = document:get_id(Developer),
-    NewFields = [{<<"id">>, Id} | Fields],
-    Mapping = field_mapping(update, NewFields),
-    document:update(Developer, NewFields, Mapping).
+update_doc(OldDeveloper, NewDeveloper) ->
+    Trans = transform(update, NewDeveloper),
+    Doc = struct:extend(document:to_json(OldDeveloper), Trans),
+    document:build_doc(mochijson2, Doc).
 
-%% ###############################################################
-%% FIELD VALIDATION
-%% ###############################################################
+transform(create, Data) ->
+    Fields = fields(create, Data),
+    struct:set_value(Fields, Data);
+transform(update, Data) ->
+    Fields = fields(update, Data),
+    struct:delete([<<"id">>, <<"_id">>],
+        struct:set_value(Fields, Data)).
 
-check(id, V, _) when is_binary(V) -> V;
-check(id, _, _) -> throw(wrong_id_format);
-
-check(email, V, _) when is_binary(V) -> V;
-check(email, _, _) -> throw(wrong_email_format);
-
-check(password, V, D) when is_binary(V) ->
-    authorization:sha(V, proplists:get_value(<<"id">>, D));
-check(password, _, _) -> throw(wrong_password_format).
+fields(create, Data) ->
+    [{<<"type">>, <<"developer">>},
+     {<<"_id">>, struct:get_value(<<"id">>, Data)},
+     {<<"password">>, authorization:sha(struct:get_value(<<"password">>, Data),
+                                        struct:get_value(<<"id">>, Data))}];
+fields(update, Data) ->
+    [{<<"type">>, <<"developer">>},
+     {<<"password">>, authorization:sha(struct:get_value(<<"password">>, Data),
+                                        struct:get_value(<<"id">>, Data))}].
 
 %% ###############################################################
 %% ###############################################################

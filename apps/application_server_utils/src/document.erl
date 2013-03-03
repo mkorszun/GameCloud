@@ -7,7 +7,7 @@
 
 -module(document).
 -export([create/3, update/3, read/2, read/3, get_id/1, delete/2, set_value/3, exclude/3]).
-
+-export([build_doc/2, to_json/1]).
 %% ###############################################################
 %%
 %% ###############################################################
@@ -103,6 +103,31 @@ exclude(Docs, Exclude, Key) ->
                     false
         end
     end, Docs).
+
+%% ###############################################################
+%% JSON TO DOC
+%% ###############################################################
+
+build_doc(mochijson2 = M, Doc) when is_list(Doc) ->
+    lists:map(fun(E) -> build_doc(M, E) end, Doc);
+build_doc(mochijson2 = M, {array, Doc}) ->
+    build_doc(M, Doc);
+build_doc(mochijson2 = M, {struct, Doc}) ->
+    {build_doc(M, Doc)};
+build_doc(mochijson2 = M, {K,V}) ->
+    {K, build_doc(M, V)};
+build_doc(mochijson2, E) ->
+    E.
+
+to_json(Doc) when is_list(Doc) ->
+    lists:map(fun(E) -> to_json(E) end, Doc);
+to_json({Doc}) ->
+    {struct, to_json(Doc)};
+to_json({K, V}) ->
+    {K, to_json(V)};
+to_json(E) ->
+    E.
+
 
 %% ###############################################################
 %% ###############################################################
