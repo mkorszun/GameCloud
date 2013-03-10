@@ -160,7 +160,7 @@ test_developer_update(_Config) ->
     meck:new(database),
     meck:expect(database, read_doc, fun(_,_) -> {ok, ?DOC} end),
     meck:expect(database, save_doc, fun(_,_) -> {ok, doc} end),
-    {ok, doc} = developer:update([], <<"id">>, struct:set_value(<<"password">>, <<"pass">>, ?CREATE_DATA)),
+    {ok, doc} = developer:update([], <<"id">>, struct:set_value([{<<"password">>, <<"pass">>}, {<<"id">>, <<"666">>}], ?CREATE_DATA)),
     [{_, {database, read_doc, [[], <<"id">>]}, {ok, ?DOC}},
      {_, {database, save_doc, [[], Doc]}, {ok,doc}}] = meck:history(database),
     <<"developer">> = document:read(<<"type">>, Doc),

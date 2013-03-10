@@ -19,18 +19,31 @@ $ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http:/
 Use token in Authorization header instead:
 
 ~~~bash
-$ curl -H "Accept: application/json" -H "Authorization: gc_auth_token B33BFE9367175983107B7B34A4A86977C7C45FB4" -X GET localhost:8080/developer/mateusz
+$ curl -H "Accept: application/json" -H "Authorization: gc_auth_token B33BFE9367175983107B7B34A4A86977C7C45FB4" -X GET gamecloudio.com/developer/mateusz
 ~~~
 
 ####Developer
 
-DEVELOPER_OBJECT:
+Schema:
 
 ~~~json
 {
-    "id" : "STRING",
-    "email" : "STRING",
-    "password" : "STRING"
+    "description":"A developer",
+    "type":"object",
+    "properties":{
+        "id":{
+            "type":"string",
+            "required":true
+        },
+        "email":{
+            "type":"string",
+            "required":true
+        },
+        "password":{
+            "type":"string",
+            "required":true}
+    },
+    "additionalProperties":false
 }
 ~~~
 
@@ -49,10 +62,8 @@ $ curl -u [DEVELOPER_ID]:[PASSWORD]  -H "Accept: application/json" -X GET http:/
 #####Update:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://gamecloudio.com/developer/[DEVELOPER_ID]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [DEVELOPER_OBJECT] http://gamecloudio.com/developer/[DEVELOPER_ID]
 ~~~
-
-VALUES_TU_UPDATE - JSON object containing subset of Developer attributes excluding id (even if specified will be ignored).
 
 #####DELETE:
 
@@ -60,24 +71,72 @@ VALUES_TU_UPDATE - JSON object containing subset of Developer attributes excludi
 $ curl -u [DEVELOPER_ID]:[PASSWORD] -X DELETE http://gamecloudio.com/developer/[DEVELOPER_ID]
 ~~~
 
-####Game collection
+####Game
 
-GAME_OBJECT:
+Schema:
 
 ~~~json
 {
-    "name" : "STRING",
-    "description" : "STRING",
-    "platform" : "android" | "ios",
-    "game_link" : "STRING",
-    "market_link" : "STRING",
-    "tags" : ["STRING", "STRING"],
-    "status" : "new" | "beta" | "published",
-    "screen" : {
-        "name" : "STRING",
-        "content_type" : "STRING",
-        "content" : "BASE64_STRING"
-    }
+    "description":"A game",
+    "type":"object",
+    "properties":{
+        "developer_id":{
+            "type":"string",
+            "required":true
+        },
+        "name":{
+            "type":"string",
+            "required":true
+        },
+        "description":{
+            "type":"string",
+            "required":true
+        },
+        "platform":{
+            "type":"string",
+            "required":true,
+            "enum":["ios","android"]
+        },
+        "game_link":{
+            "type":"string",
+            "required":true
+        },
+        "market_link":{
+            "type":"string",
+            "required":true
+        },
+        "tags":{
+            "type":"array",
+            "required":true,
+            "items":{"type":"string"}
+        },
+        "status":{
+            "type":"string",
+            "required":true,
+            "enum":["new","beta","published"]
+        },
+        "screen":{
+            "description":"A screen",
+            "type":"object",
+            "properties":{
+                "name":{
+                    "type":"string",
+                    "required":true
+                },
+                "content_type":{
+                    "type":"string",
+                    "required":true
+                },
+                "content":{
+                    "type":"string",
+                    "required":true
+                }
+            },
+            "additionalProperties":false,
+            "required":true
+        }
+    },
+    "additionalProperties":false
 }
 ~~~
 
@@ -103,10 +162,8 @@ $ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Accept: application/json" -X GET http://
 #####UPDATE:
 
 ~~~bash
-$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [VALUES_TO_UPDATE] http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
+$ curl -u [DEVELOPER_ID]:[PASSWORD] -H "Content-Type: application/json" -X PUT -d [GAME_OBJECT] http://gamecloudio.com/developer/[DEVELOPER_ID]/game/[GAME_KEY]
 ~~~
-
-VALUES_TU_UPDATE - JSON object containing subset of Game attributes.
 
 #####DELETE:
 

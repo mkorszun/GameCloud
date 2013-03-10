@@ -47,7 +47,7 @@ known_content_type(ReqData, Context) ->
 
 process_post(ReqData, State) ->
     try game_cloud_api_utils:request_body(ReqData) of
-        {struct, Developer} ->
+        Developer ->
             case developer:create(Developer) of
                 {ok, Doc} ->
                     {true, game_cloud_api_utils:set_location(

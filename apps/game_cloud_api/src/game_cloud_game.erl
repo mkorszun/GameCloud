@@ -70,7 +70,7 @@ from_json(ReqData, State) ->
     DeveloperId = dict:fetch(developer, Path),
     GameId = dict:fetch(game, Path),
     try game_cloud_api_utils:request_body(ReqData) of
-        {struct, Game} ->
+        Game ->
             case game:update(DeveloperId, GameId, Game) of
                 {ok, _} ->
                     {true, ReqData, State};

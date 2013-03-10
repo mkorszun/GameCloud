@@ -14,6 +14,8 @@
 -export([authorize/2, authorize/3]).
 -export([list_games/2, list_games/3]).
 
+-export([schema/0]).
+
 %% ###############################################################
 %% INCLUDE
 %% ###############################################################
@@ -116,6 +118,13 @@ list_games(DB, Id, Exclude) ->
     end.
 
 %% ###############################################################
+%% SCHEMA
+%% ###############################################################
+
+schema() ->
+    io:format("~s", [mochijson2:encode(?DEVELOPER_SCHEMA)]).
+
+%% ###############################################################
 %% INTERNAL FUNCTIONS
 %% ###############################################################
 
@@ -124,17 +133,14 @@ build_doc(Developer) ->
     document:build_doc(mochijson2, Trans).
 
 update_doc(OldDeveloper, NewDeveloper) ->
-    Trans = transform(update, NewDeveloper),
+    Id = document:get_id(OldDeveloper),
+    Trans = transform(update, struct:set_value(<<"id">>, Id, NewDeveloper)),
     Doc = struct:extend(document:to_json(OldDeveloper), Trans),
     document:build_doc(mochijson2, Doc).
 
-transform(create, Data) ->
+transform(_, Data) ->
     Fields = fields(create, Data),
-    struct:set_value(Fields, Data);
-transform(update, Data) ->
-    Fields = fields(update, Data),
-    struct:delete([<<"id">>, <<"_id">>],
-        struct:set_value(Fields, Data)).
+    struct:set_value(Fields, Data).
 
 fields(create, Data) ->
     [{<<"type">>, <<"developer">>},

@@ -46,7 +46,7 @@ content_types_accepted(ReqData, Context) ->
 process_post(ReqData, State) ->
     DeveloperId = dict:fetch(developer, wrq:path_info(ReqData)),
     try game_cloud_api_utils:request_body(ReqData) of
-        {struct, Game} ->
+        Game ->
             case game:create([{<<"developer_id">>, list_to_binary(DeveloperId)} | Game]) of
                 {ok, Doc} ->
                     Id = document:get_id(Doc),

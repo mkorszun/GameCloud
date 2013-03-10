@@ -67,7 +67,7 @@ from_json(ReqData, State) ->
     Path = wrq:path_info(ReqData),
     DeveloperId = dict:fetch(developer, Path),
     try game_cloud_api_utils:request_body(ReqData) of
-        {struct, Developer} ->
+        Developer ->
             case developer:update(DeveloperId, Developer) of
                 {ok, _} ->
                     {true, ReqData, State};
