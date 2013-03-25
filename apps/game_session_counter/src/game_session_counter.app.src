@@ -1,0 +1,12 @@
+{application, game_session_counter,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { game_session_counter_app, []}},
+  {env, []}
+ ]}.

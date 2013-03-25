@@ -15,7 +15,9 @@
 
 start_session(GameKey, Token) ->
     Name = list_to_atom(GameKey ++ Token),
-    supervisor:start_child(game_session_server_sup, [Name]).
+    {ok, Pid} = supervisor:start_child(game_session_server_sup, [Name]),
+    game_session_counter:add(list_to_atom(GameKey), Pid).
+
 
 stop_session(GameKey, Token) ->
     Name = list_to_atom(GameKey ++ Token),
