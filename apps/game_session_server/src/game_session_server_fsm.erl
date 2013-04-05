@@ -8,31 +8,45 @@
 -module(game_session_server_fsm).
 -behaviour(gen_fsm).
 
--export([start_link/1]).
+-compile([{parse_transform, lager_transform}]).
+
+-export([start_link/2]).
 -export([init/1, 'STARTED'/2, 'ACTIVE'/2, handle_event/3, handle_info/3, handle_sync_event/4, terminate/3, code_change/4]).
+
+%% ###############################################################
+%% MACROS
+%% ###############################################################
+
+-include("game_session_server.hrl").
+
+%% ###############################################################
+%% STATE
+%% ###############################################################
+
+-record(state, {id, key, timeout=5000, start_time}).
 
 %% ###############################################################
 %% API
 %% ###############################################################
 
-start_link(Name) ->
-    gen_fsm:start_link({local, Name}, ?MODULE, [], []).
+start_link(GameKey, SessionId) ->
+    gen_fsm:start_link({local, ?B2A(SessionId)}, ?MODULE, [SessionId, GameKey], []).
 
 %% ###############################################################
 %% GEN_FSM CALLBACKS
 %% ###############################################################
 
-init(_) ->
-    {ok, 'STARTED', [{timeout, 50000}], 50000}.
+init([SessionId, GameKey]) ->
+    {ok, 'STARTED', #state{id = SessionId, key = GameKey, start_time = erlang:now()}, 5000}.
 
-'STARTED'(ping, [{timeout, Timeout} | _] = State) ->
+'STARTED'(ping, #state{timeout=Timeout} = State) ->
     {next_state, 'ACTIVE', State, Timeout};
 'STARTED'(timeout, State) ->
     {stop, normal, State};
 'STARTED'(stop, State) ->
     {stop, normal, State}.
 
-'ACTIVE'(ping, [{timeout, Timeout} | _] = State) ->
+'ACTIVE'(ping, #state{timeout=Timeout} = State) ->
     {next_state, 'ACTIVE', State, Timeout};
 'ACTIVE'(timeout, State) ->
     {stop, normal, State};
@@ -48,8 +62,16 @@ handle_info(_Info, StateName, StateData) ->
 handle_sync_event(_Event, _From, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-terminate(_Reason, _StateName, _State) ->
-    ok.
+terminate(_Reason, _StateName, #state{id = Id, key = GameKey, start_time = Start}) ->
+    SessionTime = timer:now_diff(erlang:now(), Start) div 1000000,
+    case game_session_stats:save(GameKey, session_time, Id, ?I2B(SessionTime)) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            ?ERR("Failed to save session time - ~s ~s ~p: ~p",
+                [GameKey, Id, SessionTime, Reason]),
+            ok
+    end.
 
 code_change(_OldVsn, _StateName, State, _Extra) ->
     {ok, State}.

@@ -10,22 +10,24 @@
 -export([start_session/2, stop_session/2, ping/2]).
 
 %% ###############################################################
+%% MACROS
+%% ###############################################################
+
+-include("game_session_server.hrl").
+
+%% ###############################################################
 %% API
 %% ###############################################################
 
 start_session(GameKey, Token) ->
-    Name = list_to_atom(GameKey ++ Token),
-    {ok, Pid} = supervisor:start_child(game_session_server_sup, [Name]),
-    game_session_counter:add(list_to_atom(GameKey), Pid).
+    {ok, Pid} = supervisor:start_child(game_session_server_sup, [GameKey, Token]),
+    game_session_counter:add(?B2A(GameKey), Pid).
 
+stop_session(_GameKey, Token) ->
+    gen_fsm:send_event(?B2A(Token), stop).
 
-stop_session(GameKey, Token) ->
-    Name = list_to_atom(GameKey ++ Token),
-    gen_fsm:send_event(Name, stop).
-
-ping(GameKey, Token) ->
-    Name = list_to_atom(GameKey ++ Token),
-    gen_fsm:send_event(Name, ping).
+ping(_GameKey, Token) ->
+    gen_fsm:send_event(?B2A(Token), ping).
 
 %% ###############################################################
 %% ###############################################################

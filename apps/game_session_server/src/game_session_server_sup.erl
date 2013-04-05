@@ -14,7 +14,7 @@
 %% MACROS
 %% ###############################################################
 
--define(CHILD(I, Type), {I, {I, start_link, []}, transient, 5000, Type, [I]}).
+-define(CHILD(I, Type), {I, {I, start_link, []}, temporary, 5000, Type, [I]}).
 
 %% ###############################################################
 %% API
